@@ -1,4 +1,7 @@
-var Big = require('./big.js');
+var Big = require('./big.js'),
+    sjcl = require('./libs/sjcl/sjcl.js');
+
+sjcl.random.startCollectors();
 
 var Field = function(param_modulus, value, is_mod) {
     var modulus = param_modulus, value;
@@ -191,9 +194,34 @@ var Priv = function(p_curve, param_d) {
             "s": s,
             "r": r,
         }
+    },
+    sign = function(hash_v) {
+        var bits, words, rand, rand_e, rand_word, sign;
+
+        while(!sjcl.random.isReady()) {
+            true;
+        }
+        bits = p_curve.order.bitLength();
+        words = Math.floor((bits+31) / 32);
+        rand = sjcl.random.randomWords(words);
+        rand_e = new Big('0');
+        sign = new Big('100000000', 16);
+
+        for(var i=0; i< words; i++) {
+            rand_word = new Big(null);
+            rand_word.fromInt(rand[i]);
+            if(rand[i]<0) {
+                rand_word = rand_word.add(sign);
+            }
+            rand_e = rand_e.shiftLeft(32).or(rand_word);
+        }
+
+        return help_sign(hash_v, rand_e);
+
     };
     var ob = {
         '_help_sign': help_sign,
+        'sign': sign,
     };
     return ob;
 }

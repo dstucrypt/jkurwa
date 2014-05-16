@@ -1,7 +1,18 @@
+var val_hex = 'aff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a65890',
+    rv_hex = 'ff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a60895';
+
+try {
+    window.location;
+    document.body;
+} catch (e) {
+    window = {};
+    document = {
+        attachEvent: function() {},
+    }
+}
+
 var assert = require("assert"),
     Big = require('../big.js');
-    val_hex = 'aff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a65890',
-    rv_hex = 'ff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a60895',
     Curve = require('../curve.js'),
     Field = Curve.Field,
     Priv = Curve.Priv;
@@ -132,4 +143,14 @@ describe('Sign', function() {
             assert.equal(sig.r.toString(16), '491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2');
         })
     })
+
+    describe("#sign", function() {
+        it("should sign long binary value with privkey and generated E", function() {
+            var priv = new Priv(curve, priv_d), sig;
+            sig = priv.sign(hash_v);
+
+            assert.equal(Object.keys(sig).length, 2);
+        })
+    })
+
 })
