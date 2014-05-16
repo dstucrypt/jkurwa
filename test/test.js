@@ -3,7 +3,8 @@ var assert = require("assert"),
     val_hex = 'aff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a65890',
     rv_hex = 'ff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a60895',
     Curve = require('../curve.js'),
-    Field = Curve.Field;
+    Field = Curve.Field,
+    Priv = Curve.Priv;
 
 
 describe('Curve', function() {
@@ -104,6 +105,31 @@ describe('Point', function() {
 
                 assert.equal(0, point.x.value.compareTo(pp_x))
                 assert.equal(0, point.y.value.compareTo(pp_y))
+        })
+    })
+})
+
+describe('Sign', function() {
+    var priv_d = new Big('2A45EAFE4CD469F811737780C57253360FBCC58E134C9A1FDCD10B0E4529A143', 16),
+        hash_v = new Big('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 16),
+        rand_e = new Big('7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB', 16),
+        sig_s = new Big('0CCC6816453A903A1B641DF999011177DF420D21A72236D798532AEF42E224AB', 16),
+        sig_r = new Big('491FA1EF75EAEF75E1F20CF3918993AB37E06005EA8E204BC009A1FA61BB0FB2', 16),
+        curve;
+
+    curve = new Curve();
+    curve.param_a = new Big("0", 16);
+    curve.comp_modulus(257, 12, 0);
+    curve.set_base(new Big('002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7', 16), new Big('010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF', 16));
+    curve.order = new Big('800000000000000000000000000000006759213AF182E987D3E17714907D470D', 16);
+
+    describe("#_help_sign", function() {
+        it("should sign long binary value with privkey and provided E", function() {
+            var priv = new Priv(curve, priv_d), sig;
+            sig = priv._help_sign(hash_v, rand_e);
+
+            assert.equal(sig.s.toString(16), 'ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab')
+            assert.equal(sig.r.toString(16), '491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2');
         })
     })
 })

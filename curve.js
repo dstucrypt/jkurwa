@@ -173,6 +173,31 @@ var Point = function(p_curve, p_x, p_y) {
     return ob;
 }
 
+var Priv = function(p_curve, param_d) {
+    var field_d = new Field(p_curve.modulus, param_d, true);
+
+    var help_sign = function(hash_v, rand_e) {
+        var eG, r, s, hash_field;
+
+        hash_field = new Field(p_curve.modulus, hash_v, true);
+        eg = p_curve.base.mul(rand_e);
+        r = hash_field.mul(eg.x.value);
+        r = p_curve.truncate(r);
+
+        s = param_d.multiply(r).mod(p_curve.order);
+        s = s.add(rand_e).mod(p_curve.order);
+
+        return {
+            "s": s,
+            "r": r,
+        }
+    };
+    var ob = {
+        '_help_sign': help_sign,
+    };
+    return ob;
+}
+
 var Curve = function() {
     var modulus = new Big("0"),
     comp_modulus = function(k3, k2, k1) {
@@ -182,20 +207,37 @@ var Curve = function() {
         modulus = modulus.setBit(k3);
         ob.modulus = modulus;
     },
+    set_base = function(base_x, base_y) {
+        ob.base = point(base_x, base_y);
+    },
     field = function(val) {
         return new Field(ob.modulus, val);
     },
     point = function(px, py) {
         return new Point(ob, px, py);
+    },
+    truncate = function(value) {
+        var bitl_o = ob.order.bitLength(),
+            xbit = value.bitLength();
+
+        while(bitl_o <= xbit) {
+            value = value.clearBit(xbit - 1);
+            xbit = value.bitLength();
+        }
+        return value;
     };
+
     var ob = {
         "field": field,
         "point": point,
         "comp_modulus": comp_modulus,
+        "set_base": set_base,
         "modulus": modulus,
+        "truncate": truncate,
     };
     return ob;
 }
 
 module.exports = Curve
 module.exports.Field = Field
+module.exports.Priv = Priv
