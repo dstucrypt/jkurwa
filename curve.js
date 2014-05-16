@@ -1,6 +1,6 @@
 var Big = require('./big.js');
 
-var Field = function(param_modulus, value) {
+var Field = function(param_modulus, value, is_mod) {
     var modulus = param_modulus, value;
     mod = function(val) {
         var rv, bitm_l, mask;
@@ -66,7 +66,110 @@ var Field = function(param_modulus, value) {
         "inv": inv,
         "value": value,
     }
-    ob.value = mod(value);
+    if(is_mod !== true)
+        ob.value = mod(value);
+    return ob;
+}
+
+var Point = function(p_curve, p_x, p_y) {
+    var field_x = Field(p_curve.modulus, p_x),
+        field_y = Field(p_curve.modulus, p_y),
+        zero = new Big("0"),
+        modulus = p_curve.modulus;
+
+    var add = function(point_1) {
+        var a, x0, x1, y0, y1, x2, y2, point_2, lbd, tmp, tmp2;
+
+        a = p_curve.param_a;
+        point_2 = new Point(p_curve, zero, zero);
+
+        x0 = field_x.value;
+        y0 = field_y.value;
+        x1 = point_1.x.value;
+        y1 = point_1.y.value;
+
+        if(is_zero()) {
+            return point_1;
+        }
+
+        if(point_1.is_zero()) {
+            return ob;
+        }
+
+        if(x0.compareTo(x1) != 0) {
+            tmp = new Field(p_curve.modulus, y0.xor(y1), true);
+            tmp2 = new Field(p_curve.modulus, x0.xor(x1), true);
+            lbd = tmp.mul(tmp2.inv())
+            lbd = new Field(p_curve.modulus, lbd, true)
+            x2 = a.xor(lbd.mul(lbd.value))
+            x2 = x2.xor(lbd.value)
+            x2 = x2.xor(x0)
+            x2 = x2.xor(x1)
+        } else {
+            if(y1.compareTo(y0) != 0) {
+                return point_2;
+            } else {
+                if(x1.compareTo(zero) == 0) {
+                    return point_2;
+                } else {
+                    lbd = x1.xor(
+                            point_1.y.mul(point_1.x.inv())
+                    )
+                    lbd = new Field(modulus, lbd, true)
+                    x2 = lbd.mul(lbd.value).xor(a);
+                    x2 = x2.xor(lbd.value);
+                }
+            }
+        }
+        y2 = lbd.mul(x1.xor(x2));
+        y2 = y2.xor(x2);
+        y2 = y2.xor(y1)
+
+        point_2.x.value = x2
+        point_2.y.value = y2
+
+        return point_2;
+
+    },
+    mul = function(param_n) {
+        var point_s = new Point(p_curve, zero, zero), cmp, point;
+        cmp = param_n.compareTo(zero)
+        if(cmp == 0) {
+            return point_s;
+        }
+
+        if(cmp < 0) {
+            param_n = param_n.negate();
+            point = negate();
+        } else {
+            point = this;
+        }
+
+        var bitn_l = param_n.bitLength();
+        for(var j = bitn_l-1; j >= 0; j--) {
+            point_s = point_s.add(point_s);
+            if(param_n.testBit(j)) {
+                point_s = point_s.add(point);
+            }
+        }
+
+        return point_s;
+    },
+    is_zero = function() {
+        return (field_x.value.compareTo(zero) == 0) && (field_y.value.compareTo(zero) == 0)
+    },
+    toString = function() {
+        return "<Point x:"+field_x.value.toString(16)+", y:" + field_y.value.toString(16) + " >"
+    };
+
+    var ob = {
+        "add": add,
+        "mul": mul,
+        "is_zero": is_zero,
+        "toString": toString,
+        "x": field_x,
+        "y": field_y,
+    };
     return ob;
 }
 
@@ -81,9 +184,13 @@ var Curve = function() {
     },
     field = function(val) {
         return new Field(ob.modulus, val);
+    },
+    point = function(px, py) {
+        return new Point(ob, px, py);
     };
     var ob = {
         "field": field,
+        "point": point,
         "comp_modulus": comp_modulus,
         "modulus": modulus,
     };
