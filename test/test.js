@@ -65,12 +65,6 @@ describe("Field", function() {
 })
 
 describe('Point', function() {
-    /*
-     * <Point X:176dbde19773dfd335665597e8d6a0ab678721a5bb7030f25dc4c48b809ef3520 Y:6e75301556ea5d571403086691030f024c026907c8e818b2eedd9184d12040ee>
-     *
-     * <Point X:1da77aa066688aaee7f9fb7d88b9597b4eb4b169f9ffe340509766ca68cfe5d87 Y:1f914ddaa482e718c8d9da86be6e01145737f710584731915ecc7ac049ac539a7>
-     * <Point X:11cb6521a846548a18687e775be16729af1f26dadb162e4eb6c8b151b9a7b4615 Y:11cb6521a846548a18687e775be16729af1f26dadb162e4eb6c8b151b9a7b4615>
-     */
     var curve = new Curve;
     curve.comp_modulus(257, 12, 0);
     curve.param_a = new Big("0", 16);
@@ -84,9 +78,15 @@ describe('Point', function() {
             var rand_e = new Big(RAND_E_HEX, 16),
                 pub_x = new Big(PUB_X_HEX, 16),
                 pub_y = new Big(PUB_Y_HEX, 16),
+                pp_x = new Big('176dbde19773dfd335665597e8d6a0ab678721a5bb7030f25dc4c48b809ef3520', 16),
+                pp_y = new Big('6e75301556ea5d571403086691030f024c026907c8e818b2eedd9184d12040ee', 16),
+                pub_q, pub_2q;
+
                 pub_q = curve.point(pub_x, pub_y);
                 pub_2q = pub_q.add(pub_q)
-        //        console.log(pub_2q.toString())
+
+                assert.equal(0, pub_2q.x.value.compareTo(pp_x))
+                assert.equal(0, pub_2q.y.value.compareTo(pp_y))
         })
     })
 
@@ -95,10 +95,15 @@ describe('Point', function() {
             var rand_e = new Big(RAND_E_HEX, 16),
                 pub_x = new Big(PUB_X_HEX, 16),
                 pub_y = new Big(PUB_Y_HEX, 16),
+                pp_x = new Big('f26df77ca4c807c6b94f5c577415a1fce603a85ae7678717e16cb9a78de32d15', 16),
+                pp_y = new Big('1785fded2804bea15b02c4fd785fd3e98ab2435b8d78da44e195a9a088d3fc2d4', 16),
+                pub_q, point;
+
                 pub_q = curve.point(pub_x, pub_y);
                 point = pub_q.mul(rand_e);
 
-       //         console.log(point.toString())
+                assert.equal(0, point.x.value.compareTo(pp_x))
+                assert.equal(0, point.y.value.compareTo(pp_y))
         })
     })
 })
