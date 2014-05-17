@@ -126,6 +126,8 @@ describe('Sign', function() {
         rand_e = new Big('7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB', 16),
         sig_s = new Big('0CCC6816453A903A1B641DF999011177DF420D21A72236D798532AEF42E224AB', 16),
         sig_r = new Big('491FA1EF75EAEF75E1F20CF3918993AB37E06005EA8E204BC009A1FA61BB0FB2', 16),
+        pub_x = new Big('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 16),
+        pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16),
         curve;
 
     curve = new Curve();
@@ -150,6 +152,21 @@ describe('Sign', function() {
             sig = priv.sign(hash_v);
 
             assert.equal(Object.keys(sig).length, 2);
+        })
+    })
+
+    describe("#pub", function() {
+        it("should return pubkey from priv", function() {
+            var priv = new Priv(curve, priv_d),
+                pub = priv.pub(),
+                sig, ok;
+
+            assert.equal(pub.x.value.compareTo(pub_x), 0);
+            assert.equal(pub.y.value.compareTo(pub_y), 0);
+
+            sig = priv._help_sign(hash_v, rand_e);
+            ok = pub._help_verify(hash_v, sig.s, sig.r);
+            assert.equal(ok, true);
         })
     })
 

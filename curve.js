@@ -158,6 +158,9 @@ var Point = function(p_curve, p_x, p_y) {
 
         return point_s;
     },
+    negate = function() {
+        return new Point(p_curve, field_x.value, field_x.value.xor(field_y.value));
+    },
     is_zero = function() {
         return (field_x.value.compareTo(zero) == 0) && (field_y.value.compareTo(zero) == 0)
     },
@@ -169,12 +172,36 @@ var Point = function(p_curve, p_x, p_y) {
         "add": add,
         "mul": mul,
         "is_zero": is_zero,
+        "negate": negate,
         "toString": toString,
         "x": field_x,
         "y": field_y,
     };
     return ob;
 }
+
+var Pub = function(p_curve, point_q) {
+    var help_verify = function(hash_val, s, r) {
+        var mulQ, mulS, pointR, r1;
+
+        mulQ = point_q.mul(r);
+        mulS = p_curve.base.mul(s);
+
+        pointR = mulS.add(mulQ);
+
+        r1 = pointR.x.mul(hash_val);
+        r1 = p_curve.truncate(r1);
+
+        return r.compareTo(r1) == 0;
+    };
+    var ob = {
+        x: point_q.x,
+        y: point_q.y,
+        point: point_q,
+        _help_verify: help_verify
+    };
+    return ob;
+};
 
 var Priv = function(p_curve, param_d) {
     var field_d = new Field(p_curve.modulus, param_d, true);
@@ -218,10 +245,14 @@ var Priv = function(p_curve, param_d) {
 
         return help_sign(hash_v, rand_e);
 
+    },
+    pub = function() {
+        return new Pub(p_curve, p_curve.base.mul(param_d).negate());
     };
     var ob = {
         '_help_sign': help_sign,
         'sign': sign,
+        'pub': pub,
     };
     return ob;
 }
