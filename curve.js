@@ -1,66 +1,79 @@
 var Big = require('./big.js'),
-    sjcl = require('./libs/sjcl/sjcl.js');
+    sjcl = require('./libs/sjcl/sjcl.js'),
+    ZERO = new Big("0"),
+    ONE = new Big("1");
 
 sjcl.random.startCollectors();
+
+var fmul = function(value_1, value_2, modulus) {
+    var ret = ZERO, j, bitl_a;
+    bitl_1 = value_1.bitLength();
+    for(j = 0; j < bitl_1; j++ ) {
+        if(value_1.testBit(j)) {
+            ret = ret.xor(value_2);
+        }
+        value_2 = value_2.shiftLeft(1);
+    }
+    return fmod(ret, modulus);
+
+},
+fmod = function(val, modulus) {
+    var rv, bitm_l, mask;
+    if(val.compareTo(modulus) < 0) {
+        return val;
+    }
+    rv = val;
+    bitm_l = modulus.bitLength();
+    while(rv.bitLength() >= bitm_l) {
+        mask = modulus.shiftLeft(rv.bitLength() - bitm_l);
+        rv = rv.xor(mask);
+    }
+
+    return rv;
+},
+finv = function(value, modulus) {
+    var b, c, u, v;
+
+    b = ONE;
+    c = ZERO;
+    u = fmod(value, modulus);
+    v = modulus;
+
+    while(u.bitLength() > 1) {
+        j = u.bitLength() - v.bitLength();
+        if(j < 0) {
+            var tmp;
+            tmp = u;
+            u = v;
+            v = tmp;
+
+            tmp = c;
+            c = b;
+            b = tmp;
+
+            j = -j;
+        }
+
+        u = u.xor(v.shiftLeft(j))
+        b = b.xor(c.shiftLeft(j))
+    }
+
+    return b;
+};
 
 var Field = function(param_modulus, value, is_mod) {
     var modulus = param_modulus, value;
     mod = function(val) {
-        var rv, bitm_l, mask;
-        if(val.compareTo(modulus) < 0) {
-            return val;
-        }
-        rv = val;
-        bitm_l = modulus.bitLength();
-        while(rv.bitLength() >= bitm_l) {
-            mask = modulus.shiftLeft(rv.bitLength() - bitm_l);
-            rv = rv.xor(mask);
-        }
-
-        return rv;
+        return fmod(val, modulus);
     },
     mul = function(val) {
-        var ret = new Big("0"), j, bitl_a;
-        bitl_a = ob.value.bitLength();
-        for(j = 0; j < bitl_a; j++ ) {
-            if(ob.value.testBit(j)) {
-                ret = ret.xor(val);
-            }
-            val = val.shiftLeft(1);
-        }
-        return ob.mod(ret);
+        return fmul(val, ob.value, modulus);
     },
     add = function(val) {
         return ob.value.xor(val);
     },
     inv = function() {
-        var b, c, u, v;
-
-        b = new Big("1");
-        c = new Big("0");
-        u = mod(ob.value);
-        v = modulus;
-
-        while(u.bitLength() > 1) {
-            j = u.bitLength() - v.bitLength();
-            if(j < 0) {
-                var tmp;
-                tmp = u;
-                u = v;
-                v = tmp;
-
-                tmp = c;
-                c = b;
-                b = tmp;
-
-                j = -j;
-            }
-
-            u = u.xor(v.shiftLeft(j))
-            b = b.xor(c.shiftLeft(j))
-        }
-
-        return b;
+        return finv(ob.value, modulus);
     };
     var ob = {
         "mul": mul,
@@ -77,7 +90,7 @@ var Field = function(param_modulus, value, is_mod) {
 var Point = function(p_curve, p_x, p_y) {
     var field_x = Field(p_curve.modulus, p_x),
         field_y = Field(p_curve.modulus, p_y),
-        zero = new Big("0"),
+        zero = ZERO,
         modulus = p_curve.modulus;
 
     var add = function(point_1) {
@@ -100,12 +113,11 @@ var Point = function(p_curve, p_x, p_y) {
         }
 
         if(x0.compareTo(x1) != 0) {
-            tmp = new Field(p_curve.modulus, y0.xor(y1), true);
-            tmp2 = new Field(p_curve.modulus, x0.xor(x1), true);
-            lbd = tmp.mul(tmp2.inv())
-            lbd = new Field(p_curve.modulus, lbd, true)
-            x2 = a.xor(lbd.mul(lbd.value))
-            x2 = x2.xor(lbd.value)
+            tmp = y0.xor(y1);
+            tmp2 = x0.xor(x1);
+            lbd = fmul(tmp, finv(tmp2, p_curve.modulus),  p_curve.modulus);
+            x2 = a.xor(fmul(lbd, lbd, p_curve.modulus));
+            x2 = x2.xor(lbd)
             x2 = x2.xor(x0)
             x2 = x2.xor(x1)
         } else {
@@ -118,13 +130,12 @@ var Point = function(p_curve, p_x, p_y) {
                     lbd = x1.xor(
                             point_1.y.mul(point_1.x.inv())
                     )
-                    lbd = new Field(modulus, lbd, true)
-                    x2 = lbd.mul(lbd.value).xor(a);
-                    x2 = x2.xor(lbd.value);
+                    x2 = fmul(lbd, lbd, p_curve.modulus).xor(a);
+                    x2 = x2.xor(lbd);
                 }
             }
         }
-        y2 = lbd.mul(x1.xor(x2));
+        y2 = fmul(lbd, x1.xor(x2), p_curve.modulus);
         y2 = y2.xor(x2);
         y2 = y2.xor(y1)
 
@@ -181,7 +192,7 @@ var Point = function(p_curve, p_x, p_y) {
 }
 
 var Pub = function(p_curve, point_q) {
-    var zero = new Big("0"),
+    var zero = ZERO,
     help_verify = function(hash_val, s, r) {
         if(zero.compareTo(s) == 0) {
             throw new Error("Invalid sig component S");
@@ -249,7 +260,7 @@ var Priv = function(p_curve, param_d) {
         bits = p_curve.order.bitLength();
         words = Math.floor((bits+31) / 32);
         rand = sjcl.random.randomWords(words);
-        rand_e = new Big('0');
+        rand_e = ZERO;
         sign = new Big('100000000', 16);
 
         for(var i=0; i< words; i++) {
@@ -276,9 +287,10 @@ var Priv = function(p_curve, param_d) {
 }
 
 var Curve = function() {
-    var modulus = new Big("0"),
+    var modulus = ZERO,
+        zero = ZERO,
     comp_modulus = function(k3, k2, k1) {
-        var modulus = new Big("0");
+        var modulus = ZERO,
         modulus = modulus.setBit(k1);
         modulus = modulus.setBit(k2);
         modulus = modulus.setBit(k3);
@@ -302,6 +314,18 @@ var Curve = function() {
             xbit = value.bitLength();
         }
         return value;
+    },
+    contains = function(point) {
+        var lh, y2;
+        lh = point.x.value.xor(ob.param_a);
+        lh = fmul(lh, point.x.value, ob.modulus);
+        lh = lh.xor(point.y.value);
+        lh = fmul(lh, point.x.value, ob.modulus);
+        lh = lh.xor(ob.param_b);
+        y2 = fmul(point.y.value, point.y.value, ob.modulus);
+        lh = lh.xor(y2);
+
+        return lh.compareTo(ZERO) == 0;
     };
 
     var ob = {
@@ -311,6 +335,7 @@ var Curve = function() {
         "set_base": set_base,
         "modulus": modulus,
         "truncate": truncate,
+        "contains": contains,
     };
     return ob;
 }

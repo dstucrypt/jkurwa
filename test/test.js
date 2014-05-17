@@ -30,6 +30,24 @@ describe('Curve', function() {
             assert.equal(258, curve.modulus.bitLength());
         })
     })
+    describe('#contains', function() {
+
+        curve = new Curve();
+        curve.param_a = new Big("0", 16);
+        curve.param_b = new Big("01CEF494720115657E18F938D7A7942394FF9425C1458C57861F9EEA6ADBE3BE10", 16);
+
+        curve.comp_modulus(257, 12, 0);
+        curve.set_base(new Big('002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7', 16), new Big('010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF', 16));
+        curve.order = new Big('800000000000000000000000000000006759213AF182E987D3E17714907D470D', 16),
+        pub_x = new Big('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 16),
+        pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16);
+
+        it("should check if point is part of curve", function() {
+                var pub_q = curve.point(pub_x, pub_y);
+                assert.equal(curve.contains(pub_q), true);
+        })
+
+    })
 })
 
 describe("Field", function() {
