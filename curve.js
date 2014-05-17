@@ -222,11 +222,30 @@ var Pub = function(p_curve, point_q) {
         r1 = p_curve.truncate(r1);
 
         return r.compareTo(r1) == 0;
+    },
+    validate = function() {
+        var pub_q = ob.point, pt;
+
+        if(pub_q.is_zero()) {
+            return false;
+        }
+
+        if(p_curve.contains(pub_q) == false) {
+            return false;
+        }
+
+        pt = pub_q.mul(p_curve.order);
+        if(!pt.is_zero()) {
+            return false;
+        }
+
+        return true;
     };
     var ob = {
         x: point_q.x,
         y: point_q.y,
         point: point_q,
+        validate: validate,
         _help_verify: help_verify
     };
     return ob;
@@ -239,9 +258,15 @@ var Priv = function(p_curve, param_d) {
         var eG, r, s, hash_field;
 
         hash_field = new Field(p_curve.modulus, hash_v, true);
-        eg = p_curve.base.mul(rand_e);
-        r = hash_field.mul(eg.x.value);
+        eG = p_curve.base.mul(rand_e);
+        if(eG.x.value.compareTo(ZERO)==0) {
+            return null;
+        }
+        r = hash_field.mul(eG.x.value);
         r = p_curve.truncate(r);
+        if(r.compareTo(ZERO) == 0) {
+            return null;
+        }
 
         s = param_d.multiply(r).mod(p_curve.order);
         s = s.add(rand_e).mod(p_curve.order);
@@ -252,27 +277,15 @@ var Priv = function(p_curve, param_d) {
         }
     },
     sign = function(hash_v) {
-        var bits, words, rand, rand_e, rand_word, sign;
+        var rand_e = p_curve.rand(), ret;
 
-        while(!sjcl.random.isReady()) {
-            true;
+        while(true) {
+            ret = help_sign(hash_v, rand_e);
+            if(ret === null)
+                continue;
+
+            return ret;
         }
-        bits = p_curve.order.bitLength();
-        words = Math.floor((bits+31) / 32);
-        rand = sjcl.random.randomWords(words);
-        rand_e = ZERO;
-        sign = new Big('100000000', 16);
-
-        for(var i=0; i< words; i++) {
-            rand_word = new Big(null);
-            rand_word.fromInt(rand[i]);
-            if(rand[i]<0) {
-                rand_word = rand_word.add(sign);
-            }
-            rand_e = rand_e.shiftLeft(32).or(rand_word);
-        }
-
-        return help_sign(hash_v, rand_e);
 
     },
     pub = function() {
@@ -326,6 +339,39 @@ var Curve = function() {
         lh = lh.xor(y2);
 
         return lh.compareTo(ZERO) == 0;
+    },
+    rand = function() {
+        var bits, words, rand, ret, rand_word;
+
+        while(!sjcl.random.isReady()) {
+            true;
+        }
+        bits = ob.order.bitLength();
+        words = Math.floor((bits+31) / 32);
+        rand = sjcl.random.randomWords(words);
+        ret = ZERO;
+        sign = new Big('100000000', 16);
+
+        for(var i=0; i< words; i++) {
+            rand_word = new Big(null);
+            rand_word.fromInt(rand[i]);
+            if(rand[i]<0) {
+                rand_word = rand_word.add(sign);
+            }
+            ret = ret.shiftLeft(32).or(rand_word);
+        }
+
+        return ret;
+    },
+    keygen = function() {
+        var rand_d = ob.rand(), priv, pub;
+        while(true) {
+            priv = new Priv(ob, rand_d);
+            pub = priv.pub();
+            if(pub.validate()) {
+                return priv;
+            }
+        }
     };
 
     var ob = {
@@ -336,6 +382,8 @@ var Curve = function() {
         "modulus": modulus,
         "truncate": truncate,
         "contains": contains,
+        "rand": rand,
+        "keygen": keygen,
     };
     return ob;
 }

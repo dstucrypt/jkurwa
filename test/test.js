@@ -48,6 +48,16 @@ describe('Curve', function() {
         })
 
     })
+
+    describe("#generate()", function() {
+        it("should generate new private key", function() {
+            var priv, pub;
+
+            priv = curve.keygen();
+            pub = priv.pub();
+            assert.equal(true, curve.contains(pub.point));
+        })
+    })
 })
 
 describe("Field", function() {
