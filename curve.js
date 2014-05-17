@@ -181,13 +181,31 @@ var Point = function(p_curve, p_x, p_y) {
 }
 
 var Pub = function(p_curve, point_q) {
-    var help_verify = function(hash_val, s, r) {
+    var zero = new Big("0"),
+    help_verify = function(hash_val, s, r) {
+        if(zero.compareTo(s) == 0) {
+            throw new Error("Invalid sig component S");
+        }
+        if(zero.compareTo(r) == 0) {
+            throw new Error("Invalid sig component R");
+        }
+
+        if(p_curve.order.compareTo(s) < 0) {
+            throw new Error("Invalid sig component S");
+        }
+        if(p_curve.order.compareTo(r) < 0) {
+            throw new Error("Invalid sig component R");
+        }
+
         var mulQ, mulS, pointR, r1;
 
         mulQ = point_q.mul(r);
         mulS = p_curve.base.mul(s);
 
         pointR = mulS.add(mulQ);
+        if(pointR.is_zero()) {
+            throw new Error("Invalid sig R point at infinity");
+        }
 
         r1 = pointR.x.mul(hash_val);
         r1 = p_curve.truncate(r1);
