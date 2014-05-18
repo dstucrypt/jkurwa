@@ -299,7 +299,16 @@ var Priv = function(p_curve, param_d) {
     return ob;
 }
 
-var Curve = function() {
+var Curve = function(params, param_b, m, k1, k2, base, order) {
+    if(params.base === undefined) {
+        params = {
+            param_a: params,
+            param_b: param_b,
+            m: m, k1: k1, k2: k2,
+            base: base,
+            order: order,
+        }
+    }
     var modulus = ZERO,
         zero = ZERO,
     comp_modulus = function(k3, k2, k1) {
@@ -384,10 +393,32 @@ var Curve = function() {
         "contains": contains,
         "rand": rand,
         "keygen": keygen,
+        "order": params.order,
+        "param_a": params.a,
+        "param_b": params.b,
     };
+    ob.comp_modulus(params.m, params.k1, params.k2);
+    ob.set_base(params.base.x, params.base.y);
     return ob;
 }
 
+Curve.defined = {
+    DSTU_B_257: new Curve({
+        a: new Big("0", 16),
+        b: new Big("01CEF494720115657E18F938D7A7942394FF9425C1458C57861F9EEA6ADBE3BE10", 16),
+
+        base: {
+            x: new Big('002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7', 16),
+            y: new Big('010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF', 16)
+        },
+
+        order: new Big('800000000000000000000000000000006759213AF182E987D3E17714907D470D', 16),
+
+        m: 257,
+        k1: 12,
+        k2: 0,
+    })
+}
 module.exports = Curve
 module.exports.Field = Field
 module.exports.Priv = Priv

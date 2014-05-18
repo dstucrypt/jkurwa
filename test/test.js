@@ -21,7 +21,7 @@ var assert = require("assert"),
 describe('Curve', function() {
     describe('#comp_modulus()', function() {
         it('should compute curve modulus', function() {
-            var curve = new Curve(),
+            var curve = Curve.defined.DSTU_B_257,
                 mod_hex = "20000000000000000000000000000000000000000000000000000000000001001",
                 mod = new Big(mod_hex, 16);
 
@@ -32,13 +32,7 @@ describe('Curve', function() {
     })
     describe('#contains', function() {
 
-        curve = new Curve();
-        curve.param_a = new Big("0", 16);
-        curve.param_b = new Big("01CEF494720115657E18F938D7A7942394FF9425C1458C57861F9EEA6ADBE3BE10", 16);
-
-        curve.comp_modulus(257, 12, 0);
-        curve.set_base(new Big('002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7', 16), new Big('010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF', 16));
-        curve.order = new Big('800000000000000000000000000000006759213AF182E987D3E17714907D470D', 16),
+        curve = Curve.defined.DSTU_B_257;
         pub_x = new Big('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 16),
         pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16);
 
@@ -61,8 +55,7 @@ describe('Curve', function() {
 })
 
 describe("Field", function() {
-    var curve = new Curve;
-    curve.comp_modulus(257, 12, 0);
+    var curve = Curve.defined.DSTU_B_257;
 
     describe("#mod", function() {
         it("should return mod of value", function() {
@@ -105,9 +98,7 @@ describe("Field", function() {
 })
 
 describe('Point', function() {
-    var curve = new Curve;
-    curve.comp_modulus(257, 12, 0);
-    curve.param_a = new Big("0", 16);
+    var curve = Curve.defined.DSTU_B_257;
 
     var RAND_E_HEX = '7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB',
         PUB_X_HEX = '00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589',
@@ -158,11 +149,7 @@ describe('Sign', function() {
         pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16),
         curve;
 
-    curve = new Curve();
-    curve.param_a = new Big("0", 16);
-    curve.comp_modulus(257, 12, 0);
-    curve.set_base(new Big('002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7', 16), new Big('010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF', 16));
-    curve.order = new Big('800000000000000000000000000000006759213AF182E987D3E17714907D470D', 16);
+    curve = Curve.defined.DSTU_B_257;
 
     describe("#_help_sign", function() {
         it("should sign long binary value with privkey and provided E", function() {
