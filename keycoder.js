@@ -1,4 +1,5 @@
 var asn1 = require('asn1.js'),
+    Big = require('./3rtparty/jsbn.packed.js'),
     Buffer = require('buffer').Buffer;
 
 var Keycoder = function() {
@@ -84,6 +85,22 @@ var Keycoder = function() {
                 this.key('attr').implicit(0).seqof(ob.Attr)
             );
         }),
+        add_zero: function(u8, reorder) {
+            var ret = [];
+            if(reorder === true) {
+            } else {
+                ret.push(0);
+            }
+            for(var i=0; i<u8.length; i++) {
+                ret.push(u8[i]);
+            }
+
+            if(reorder === true) {
+                ret.push(0);
+                ret = ret.reverse();
+            }
+            return ret;
+        },
         to_pem: function(b64) {
             return [PEM_KEY_B, b64, PEM_KEY_E].join('\n');
         },
@@ -145,18 +162,38 @@ var Keycoder = function() {
                 "body": asn1.cryptData,
             }
         },
+        privkey_parse: function(data) {
+            var priv = ob.Privkey.decode(data, 'der');
+            return {
+                param_d: new Big(ob.add_zero(priv.param_d)),
+                curve: {
+                    m: priv.priv0.p.p.p.param_m,
+                    k1: priv.priv0.p.p.p.param_k1,
+                    a: new Big([priv.priv0.p.p.param_a]),
+                    b: new Big(ob.add_zero(priv.priv0.p.p.param_b, true)),
+                    order: new Big(ob.add_zero(priv.priv0.p.p.order)),
+                    base: new Big(ob.add_zero(priv.priv0.p.p.bp, true)),
+                },
+                sbox: priv.priv0.p.sbox,
+                format: "privkey",
+            }
+        },
         guess_parse: function(indata) {
-            var data = indata, ret;
+            var data = indata, ret, tr;
             data = new Buffer(indata, 'raw');
 
-            try {
-                return ob.iit_parse(data);
-            } catch (e) {}
-            try {
-                return ob.pbes2_parse(data);
-            } catch(e) {}
-            priv = ob.Privkey.decode(data, 'der');
-            return;
+            tr = [
+                'iit_parse',
+                'pbes2_parse',
+                'privkey_parse',
+            ];
+
+            for(var i=0; i<tr.length; i++) {
+                try {
+                    return ob[tr[i]](data);
+                } catch (e) {}
+            }
+
             throw new Error("Unknown format");
         },
     };

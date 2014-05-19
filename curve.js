@@ -458,19 +458,16 @@ var Curve = function(params, param_b, m, k1, k2, base, order) {
             true;
         }
         bits = ob.order.bitLength();
-        words = Math.floor((bits+31) / 32);
+        words = Math.floor((bits+23) / 24);
         rand = sjcl.random.randomWords(words);
-        ret = ZERO;
-        sign = new Big('100000000', 16);
 
-        for(var i=0; i< words; i++) {
-            rand_word = new Big(null);
-            rand_word.fromInt(rand[i]);
-            if(rand[i]<0) {
-                rand_word = rand_word.add(sign);
-            }
-            ret = ret.shiftLeft(32).or(rand_word);
+        var rand24 = [0];
+        for(var i=0; i< rand.length; i++) {
+            rand24.push(0x0000FF & rand[i]);
+            rand24.push((0x00FF00 & rand[i])>>8);
+            rand24.push((0xFF0000 & rand[i])>>16);
         }
+        ret = new Big(rand24);
 
         return ret;
     },
