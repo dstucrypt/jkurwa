@@ -15,7 +15,8 @@ var assert = require("assert"),
     Big = require('../big.js');
     Curve = require('../curve.js'),
     Field = Curve.Field,
-    Priv = Curve.Priv;
+    Priv = Curve.Priv,
+    ZERO = new Big("0");
 
 
 describe('Curve', function() {
@@ -135,6 +136,34 @@ describe('Point', function() {
 
                 assert.equal(0, point.x.value.compareTo(pp_x))
                 assert.equal(0, point.y.value.compareTo(pp_y))
+        })
+    })
+
+    describe("#trace()", function() {
+        it("should compute field trace", function() {
+            var value_hex = '2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6';
+            var value = new Big(value_hex, 16);
+            var trace = curve.trace(value);
+
+            assert.equal(1, trace);
+        })
+    })
+
+    describe("#expand()", function() {
+        it("should compute coordinates from compressed point", function() {
+            var pt = curve.point(ZERO, ZERO);
+            var coords = pt.expand(ZERO);
+            assert.equal(0, ZERO.compareTo(coords.x));
+
+            var compressed = new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 16);
+            var coords = pt.expand(compressed);
+
+            assert.equal(0, coords.x.compareTo(curve.base.x.value));
+            assert.equal(0, coords.y.compareTo(curve.base.y.value));
+
+            var pt = curve.point(compressed);
+
+            assert.equal(true, pt.equals(curve.base));
         })
     })
 })

@@ -1,5 +1,6 @@
-var Big = require('./big.js'),
-    sjcl = require('./libs/sjcl/sjcl.js'),
+var Big = require('./3rtparty/jsbn.packed.js'),
+    sjcl = require('sjcl'),
+    Keycoder = require('./keycoder.js'),
     ZERO = new Big("0"),
     ONE = new Big("1");
 
@@ -59,6 +60,47 @@ finv = function(value, modulus) {
     }
 
     return b;
+},
+ftrace = function(value, modulus) {
+    var rv = value;
+    var bitm_l = modulus.bitLength();
+
+    for(var idx = 1; idx <= bitm_l-2; idx++) {
+        rv = fmul(rv, rv, modulus);
+        rv = rv.xor(value);
+    }
+
+    return rv.intValue();
+},
+fsquad = function(value, modulus) {
+    var ret;
+    if(modulus.testBit(0)) {
+        ret = fsquad_odd(value, modulus);
+    }
+
+    return fmod(ret, modulus);
+},
+fsquad_odd = function(value, modulus) {
+    var val_a = fmod(value, modulus);
+    var val_z = val_a;
+    var bitl_m = modulus.bitLength();
+    var range_to = (bitl_m-2)/2;
+    var val_w;
+
+    for(var idx=1; idx <= range_to; idx++) {
+        val_z = fmul(val_z, val_z, modulus);
+        val_z = fmul(val_z, val_z, modulus);
+        val_z = val_z.xor(val_a);
+    }
+
+    val_w = fmul(val_z, val_z, modulus);
+    val_w = val_w.xor(val_z, val_w);
+
+    if(val_w.compareTo(val_a) == 0) {
+        return val_z;
+    }
+
+    throw new Error("squad eq fail");
 };
 
 var Field = function(param_modulus, value, is_mod) {
@@ -88,9 +130,7 @@ var Field = function(param_modulus, value, is_mod) {
 }
 
 var Point = function(p_curve, p_x, p_y) {
-    var field_x = Field(p_curve.modulus, p_x),
-        field_y = Field(p_curve.modulus, p_y),
-        zero = ZERO,
+    var zero = ZERO,
         modulus = p_curve.modulus;
 
     var add = function(point_1) {
@@ -175,15 +215,74 @@ var Point = function(p_curve, p_x, p_y) {
     is_zero = function() {
         return (field_x.value.compareTo(zero) == 0) && (field_y.value.compareTo(zero) == 0)
     },
+    expand = function(val) {
+        var pa = p_curve.param_a;
+        var pb = p_curve.param_b;
+
+        if(val.compareTo(ZERO) == 0) {
+            return {
+                x: val,
+                y: fmul(pb, pb, p_curve.modulus),
+            }
+        }
+
+        var k = val.testBit(0);
+        val = val.clearBit(0);
+
+        var trace = ftrace(val, p_curve.modulus);
+        if((trace != 0 && pa.compareTo(ZERO) == 0) || (trace == 0 && pa.compareTo(ONE))) {
+            val = val.setBit(0);
+        }
+
+        var x2 = fmul(val, val, p_curve.modulus);
+        var y = fmul(x2, val, p_curve.modulus);
+
+        if(pa.compareTo(ONE) == 0) {
+            y = y.xor(x2);
+        }
+
+        y = y.xor(pb);
+        x2 = finv(x2, p_curve.modulus);
+
+        y = fmul(y, x2, p_curve.modulus);
+        y = fsquad(y, p_curve.modulus);
+
+        var trace_y = ftrace(y, p_curve.modulus);
+
+        if((k != 0 && trace_y==0) || (k==0 && trace_y!==0)) {
+            y = y.add(ONE);
+        }
+
+        y = fmul(y, val, p_curve.modulus);
+        return {
+            x: val,
+            y: y,
+        }
+    },
+    equals = function(other) {
+        return (other.x.value.compareTo(ob.x.value) == 0) && (
+                other.y.value.compareTo(ob.y.value) == 0
+        );
+    },
     toString = function() {
         return "<Point x:"+field_x.value.toString(16)+", y:" + field_y.value.toString(16) + " >"
     };
 
+    if(p_y === undefined) {
+        var coords = expand(p_x);
+        p_x = coords.x;
+        p_y = coords.y;
+    }
+
+    var field_x = Field(p_curve.modulus, p_x),
+        field_y = Field(p_curve.modulus, p_y);
     var ob = {
         "add": add,
         "mul": mul,
         "is_zero": is_zero,
         "negate": negate,
+        "expand": expand,
+        "equals": equals,
         "toString": toString,
         "x": field_x,
         "y": field_y,
@@ -349,6 +448,9 @@ var Curve = function(params, param_b, m, k1, k2, base, order) {
 
         return lh.compareTo(ZERO) == 0;
     },
+    trace = function(value) {
+        return ftrace(value, ob.modulus);
+    },
     rand = function() {
         var bits, words, rand, ret, rand_word;
 
@@ -391,11 +493,13 @@ var Curve = function(params, param_b, m, k1, k2, base, order) {
         "modulus": modulus,
         "truncate": truncate,
         "contains": contains,
+        "trace": trace,
         "rand": rand,
         "keygen": keygen,
         "order": params.order,
         "param_a": params.a,
         "param_b": params.b,
+        "param_m": params.m,
     };
     ob.comp_modulus(params.m, params.k1, params.k2);
     ob.set_base(params.base.x, params.base.y);
@@ -422,3 +526,5 @@ Curve.defined = {
 module.exports = Curve
 module.exports.Field = Field
 module.exports.Priv = Priv
+module.exports.Keycoder = Keycoder
+module.exports.Big = Big

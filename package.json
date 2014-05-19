@@ -1,0 +1,32 @@
+{
+  "name": "jkurwa",
+  "version": "0.1.0",
+  "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
+  "main": "curve.js",
+  "scripts": {
+    "test": "mocha --reporter spec ./test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:muromec/jkurwa"
+  },
+  "keywords": [
+    "ecc",
+    "cryptography",
+    "dstu4145",
+    "ukraine"
+  ],
+  "author": "Ilya Petrov",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/muromec/jkurwe/issues"
+  },
+  "homepage": "https://github.com/muromec/jkurwe/",
+  "devDependencies": {
+    "mocha": "~1.14.0"
+  },
+  "dependencies": {
+    "sjcl": "~1.0.1",
+    "asn1.js": "~0.3.0"
+  }
+}
