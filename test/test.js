@@ -6,14 +6,15 @@ try {
     document.body;
 } catch (e) {
     window = {};
+    navigator = {};
     document = {
         attachEvent: function() {},
     }
 }
 
 var assert = require("assert"),
-    Big = require('../big.js');
     Curve = require('../curve.js'),
+    Big = Curve.Big,
     Field = Curve.Field,
     Priv = Curve.Priv,
     ZERO = new Big("0");
