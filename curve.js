@@ -499,7 +499,7 @@ var Curve = function(params, param_b, m, k1, k2, base, order) {
         "param_m": params.m,
     };
     ob.comp_modulus(params.m, params.k1, params.k2);
-    if(params.base.value !== undefined) {
+    if(params.base.x === undefined) {
         ob.set_base(params.base)
     } else {
         ob.set_base(params.base.x, params.base.y);
