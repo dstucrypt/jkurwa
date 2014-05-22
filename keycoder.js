@@ -185,7 +185,7 @@ var Keycoder = function() {
         privkey_parse: function(data) {
             var priv = ob.Privkey.decode(data, 'der');
             return {
-                param_d: new Big(ob.add_zero(priv.param_d)),
+                param_d: new Big(ob.add_zero(priv.param_d, true)),
                 curve: {
                     m: priv.priv0.p.p.p.param_m,
                     k1: priv.priv0.p.p.p.param_k1,
@@ -200,8 +200,11 @@ var Keycoder = function() {
         },
         cert_parse: function(data) {
             var cert = Certificate.decode(data, 'der');
+            var tbs = cert.tbsCertificate;
+            var pub = tbs.subjectPublicKeyInfo.subjectPublicKey.data.slice(2);
             return {
                 format: "x509",
+                pubkey: new Big(ob.add_zero(pub, true)),
                 issuer: ob.parse_dn(cert.tbsCertificate.issuer.value),
                 subject: ob.parse_dn(cert.tbsCertificate.subject.value)
             };

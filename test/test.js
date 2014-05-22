@@ -216,3 +216,23 @@ describe('Sign', function() {
     })
 
 })
+
+describe('Broken', function() {
+    var curve = Curve.defined.DSTU_B_257;
+
+    describe("#expand()", function() {
+        it("should compute coordinates from compressed point", function() {
+            var compressed = new Big("76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b419", 16);
+            var pt = curve.point(ZERO, ZERO);
+
+            var coords = pt.expand(compressed);
+
+            var px = new Big('76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b418', 16);
+            var py = new Big('12b20103548f45dcbed5486022dfcb244b2d996e0d3d761abaf73ba16ea26e0d3', 16);
+
+            assert.equal(0, coords.x.compareTo(px));
+            assert.equal(0, coords.y.compareTo(py));
+        })
+    })
+
+})

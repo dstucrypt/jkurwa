@@ -243,7 +243,7 @@ var Point = function (p_curve, p_x, p_y) {
             val = val.clearBit(0);
 
             trace = ftrace(val, modulus);
-            if ((trace !== 0 && pa.compareTo(ZERO) === 0) || (trace === 0 && pa.compareTo(ONE))) {
+            if ((trace !== 0 && pa.compareTo(ZERO) === 0) || (trace === 0 && pa.compareTo(ONE) === 0)) {
                 val = val.setBit(0);
             }
 
