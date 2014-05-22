@@ -104,9 +104,49 @@ var Extensions = asn1.define('Extensions', function() {
 });
 exports.Extensions = Extensions;
 
+var extnIdMap = {
+"1 3 6 1 5 5 7 1 1": "authorityInfoAccess",
+"1 3 6 1 5 5 7 1 2": "biometricInfo",
+"1 3 6 1 5 5 7 1 3": "qcStatements",
+"1 3 6 1 5 5 7 1 4": "ac-auditEntity",
+"1 3 6 1 5 5 7 1 5": "ac-targeting",
+"1 3 6 1 5 5 7 1 6": "aaControls",
+"1 3 6 1 5 5 7 1 7": "sbgp-ipAddrBlock",
+"1 3 6 1 5 5 7 1 8": "sbgp-autonomousSysNum",
+"1 3 6 1 5 5 7 1 9": "sbgp-routerIdentifier",
+"1 3 6 1 5 5 7 1 10": "ac-proxying",
+"1 3 6 1 5 5 7 1 11": "subjectInfoAccess",
+"1 3 6 1 5 5 7 1 14": "proxyCertInfo",
+'2 5 29 9': 'subjectDirectoryAttributes',
+'2 5 29 14': 'subjectKeyIdentifier',
+'2 5 29 15': 'keyUsage',
+'2 5 29 16': 'privateKeyUsagePeriod',
+'2 5 29 17': 'subjectAltName',
+'2 5 29 18': 'issuerAltName',
+'2 5 29 19': 'basicConstraints',
+'2 5 29 20': 'crlNumber',
+'2 5 29 21': 'CRLReason',
+'2 5 29 24': 'invalidityDate',
+'2 5 29 27': 'deltaCRL',
+'2 5 29 28': 'issuingDistributionPoint',
+'2 5 29 29': 'certificateIssuer',
+'2 5 29 30': 'nameConstraints',
+'2 5 29 31': 'crlDistributionPoints',
+'2 5 29 32': 'certificatePolicies',
+'2 5 29 32 0': 'anyPolicy',
+'2 5 29 33': 'policyMappings',
+'2 5 29 35': 'authorityKeyIdentifier',
+'2 5 29 36': 'policyConstraints',
+'2 5 29 37': 'extendedKeyUsage',
+'2 5 29 46': 'freshestCRL',
+'2 5 29 54': 'inhibitAnyPolicy',
+'2 5 29 55': 'targetInformation',
+'2 5 29 56': 'noRevAvail',
+}
+
 var Extension = asn1.define('Extension', function() {
   this.seq().obj(
-    this.key('extnID').objid(),
+    this.key('extnID').objid(extnIdMap),
     this.key('critical').bool().def(false),
     this.key('extnValue').octstr()
   );

@@ -13,6 +13,9 @@ var Keycoder = function() {
         '1 2 804 2 1 1 1 1 1 2': "GOST_34311_HMAC",
         '1 2 804 2 1 1 1 1 1 1 3': "GOST_28147_CFB",
         '1 2 804 2 1 1 1 1 3 1 1': "DSTU_4145_LE",
+
+        '1 2 804 2 1 1 1 11 1 4 1 1': 'DRFO',
+        '1 2 804 2 1 1 1 11 1 4 2 1': 'EDRPOU',
     },
     PEM_KEY_B = '-----BEGIN PRIVATE KEY-----',
     PEM_KEY_E = '-----END PRIVATE KEY-----';
@@ -87,6 +90,18 @@ var Keycoder = function() {
                 this.key('attr').implicit(0).seqof(ob.Attr)
             );
         }),
+        IPN_VAL: asn1.define('IPN_VAL', function() {
+            this.implicit(0x13).octstr()
+        }),
+        IPN_ID: asn1.define('IPN_ID', function() {
+            this.seq().obj(
+                this.key('id').objid(OID),
+                this.key("val").setof(ob.IPN_VAL)
+            )
+        }),
+        IPN: asn1.define('IPN', function() {
+            this.seqof(ob.IPN_ID)
+        }),
         add_zero: function(u8, reorder) {
             var ret = [];
             if(reorder === true) {
@@ -105,6 +120,25 @@ var Keycoder = function() {
         },
         strFromUtf8Ab: function(ab) {
                 return decodeURIComponent(escape(String.fromCharCode.apply(null, ab)));
+        },
+        parse_ipn: function(data) {
+            var asn_ib = ob.IPN.decode(data, 'der');
+            var i, part, ret = {};
+            for(i = 0; i < asn_ib.length; i++) {
+                part = asn_ib[i];
+                ret[part.id] = String.fromCharCode.apply(null, part.val[0]);
+            }
+            return ret;
+        },
+        parse_ext: function(asn_ob) {
+            var ret, i, part;
+            ret = {};
+            for(i = 0; i< asn_ob.length; i++) {
+                part = asn_ob[i];
+                ret[part.extnID] = part.extnValue;
+            }
+            ret.ipn = ob.parse_ipn(ret.subjectDirectoryAttributes);
+            return ret;
         },
         parse_dn: function(asn_ob) {
             var ret, i, j, part;
@@ -205,6 +239,7 @@ var Keycoder = function() {
             return {
                 format: "x509",
                 pubkey: new Big(ob.add_zero(pub, true)),
+                extension: ob.parse_ext(cert.tbsCertificate.extensions.e),
                 issuer: ob.parse_dn(cert.tbsCertificate.issuer.value),
                 subject: ob.parse_dn(cert.tbsCertificate.subject.value)
             };
