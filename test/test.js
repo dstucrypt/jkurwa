@@ -181,10 +181,10 @@ describe('Sign', function() {
 
     curve = Curve.defined.DSTU_B_257;
 
-    describe("#_help_sign", function() {
+    describe("#help_sign", function() {
         it("should sign long binary value with privkey and provided E", function() {
             var priv = new Priv(curve, priv_d), sig;
-            sig = priv._help_sign(hash_v, rand_e);
+            sig = priv.help_sign(hash_v, rand_e);
 
             assert.equal(sig.s.toString(16), 'ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab')
             assert.equal(sig.r.toString(16), '491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2');
@@ -209,8 +209,8 @@ describe('Sign', function() {
             assert.equal(pub.x.value.compareTo(pub_x), 0);
             assert.equal(pub.y.value.compareTo(pub_y), 0);
 
-            sig = priv._help_sign(hash_v, rand_e);
-            ok = pub._help_verify(hash_v, sig.s, sig.r);
+            sig = priv.help_sign(hash_v, rand_e);
+            ok = pub.help_verify(hash_v, sig.s, sig.r);
             assert.equal(ok, true);
         })
     })

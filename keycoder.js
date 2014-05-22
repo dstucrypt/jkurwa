@@ -1,5 +1,7 @@
 var asn1 = require('asn1.js'),
     Big = require('./3rtparty/jsbn.packed.js'),
+    rfc3280 = require('./rfc3280.js'),
+    Certificate = rfc3280.Certificate,
     Buffer = require('buffer').Buffer;
 
 var Keycoder = function() {
@@ -101,6 +103,24 @@ var Keycoder = function() {
             }
             return ret;
         },
+        strFromUtf8Ab: function(ab) {
+                return decodeURIComponent(escape(String.fromCharCode.apply(null, ab)));
+        },
+        parse_dn: function(asn_ob) {
+            var ret, i, j, part;
+            ret = {};
+            for(i = 0; i < asn_ob.length; i++) {
+                for(j = 0; j < asn_ob[i].length; j++) {
+                    part = asn_ob[i][j];
+                    if ((part.value[0] == 0xC) && part.value[1] === part.value.length -2) {
+                        ret[part.type] = ob.strFromUtf8Ab(part.value.slice(2));
+                    } else {
+                        ret[part.type] = part.value;
+                    }
+                }
+            }
+            return ret;
+        },
         to_pem: function(b64) {
             return [PEM_KEY_B, b64, PEM_KEY_E].join('\n');
         },
@@ -177,6 +197,14 @@ var Keycoder = function() {
                 sbox: priv.priv0.p.sbox,
                 format: "privkey",
             }
+        },
+        cert_parse: function(data) {
+            var cert = Certificate.decode(data, 'der');
+            return {
+                format: "x509",
+                issuer: ob.parse_dn(cert.tbsCertificate.issuer.value),
+                subject: ob.parse_dn(cert.tbsCertificate.subject.value)
+            };
         },
         guess_parse: function(indata) {
             var data = indata, ret, tr;
