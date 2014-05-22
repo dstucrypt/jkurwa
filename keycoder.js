@@ -214,6 +214,7 @@ var Keycoder = function() {
                 'iit_parse',
                 'pbes2_parse',
                 'privkey_parse',
+                'cert_parse',
             ];
 
             for(var i=0; i<tr.length; i++) {
