@@ -239,6 +239,10 @@ var Keycoder = function() {
             return {
                 format: "x509",
                 pubkey: new Big(ob.add_zero(pub, true)),
+                valid: {
+                    from: tbs.validity.notBefore.value,
+                    to: tbs.validity.notAfter.value
+                },
                 extension: ob.parse_ext(cert.tbsCertificate.extensions.e),
                 issuer: ob.parse_dn(cert.tbsCertificate.issuer.value),
                 subject: ob.parse_dn(cert.tbsCertificate.subject.value)
