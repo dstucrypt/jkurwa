@@ -16,9 +16,7 @@ var Keycoder = function() {
 
         '1 2 804 2 1 1 1 11 1 4 1 1': 'DRFO',
         '1 2 804 2 1 1 1 11 1 4 2 1': 'EDRPOU',
-    },
-    PEM_KEY_B = '-----BEGIN PRIVATE KEY-----',
-    PEM_KEY_E = '-----END PRIVATE KEY-----';
+    };
 
     var ob = {
         StoreIIT: asn1.define('StoreIIT', function() {
@@ -155,8 +153,15 @@ var Keycoder = function() {
             }
             return ret;
         },
-        to_pem: function(b64) {
-            return [PEM_KEY_B, b64, PEM_KEY_E].join('\n');
+        to_pem: function(b64, desc) {
+            var begin, end;
+            if(desc === undefined) {
+                desc = 'PRIVATE KEY';
+            }
+            begin = '-----BEGIN ' + desc + '-----';
+            end = '-----END ' + desc + '-----';
+
+            return [begin, b64, end].join('\n');
         },
         is_valid : function(indata) {
             return (indata[0] == 0x30) && ((indata[1] & 0x80) == 0x80);
