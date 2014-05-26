@@ -6,6 +6,7 @@
 var Big = require('./3rtparty/jsbn.packed.js'),
     sjcl = require('sjcl'),
     Keycoder = require('./keycoder.js'),
+    base64 = require('./base64.js'),
     ZERO = new Big("0"),
     ONE = new Big("1");
 
@@ -547,3 +548,5 @@ module.exports.Field = Field;
 module.exports.Priv = Priv;
 module.exports.Keycoder = Keycoder;
 module.exports.Big = Big;
+module.exports.b64_decode = base64.b64_decode;
+module.exports.b64_encode = base64.b64_encode;
