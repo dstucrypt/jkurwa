@@ -275,6 +275,21 @@ var Point = function (p_curve, p_x, p_y) {
                 y: y,
             };
         },
+        compress = function() {
+            var x_inv, tmp, ret, trace;
+
+            x_inv = finv(ob.x.value, modulus);
+            tmp = fmul(x_inv, ob.y.value, modulus);
+            trace = ftrace(tmp, modulus);
+            ret = ob.x.value;
+            if(trace === 1) {
+                ret = ret.setBit(0);
+            } else {
+                ret = ret.clearBit(0);
+            }
+
+            return ret;
+        },
         equals = function (other) {
             return (other.x.value.compareTo(ob.x.value) === 0) && (
                 other.y.value.compareTo(ob.y.value) === 0
@@ -296,6 +311,7 @@ var Point = function (p_curve, p_x, p_y) {
         "is_zero": is_zero,
         "negate": negate,
         "expand": expand,
+        "compress": compress,
         "equals": equals,
         "toString": toString,
         "x": new Field(modulus, p_x),

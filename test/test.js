@@ -167,6 +167,17 @@ describe('Point', function() {
             assert.equal(true, pt.equals(curve.base));
         })
     })
+
+    describe("#compress()", function() {
+        it("should compress point coords", function() {
+            var pt = curve.base;
+            var compressed = pt.compress();
+
+            var expected = new Big("2a29ef207d0e9b6c55cd260b306c7e007ac491ca1b10c62334a9e8dcd8d20fb6", 16);
+
+            assert.equal(0, compressed.compareTo(expected));
+        })
+    })
 })
 
 describe('Sign', function() {
