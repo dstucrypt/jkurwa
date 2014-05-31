@@ -4,13 +4,10 @@
 'use strict';
 
 var Big = require('./3rtparty/jsbn.packed.js'),
-    sjcl = require('sjcl'),
     Keycoder = require('./keycoder.js'),
     base64 = require('./base64.js'),
     ZERO = new Big("0"),
     ONE = new Big("1");
-
-sjcl.random.startCollectors();
 
 var fmod = function (val, modulus) {
     var rv, bitm_l, mask;
@@ -485,22 +482,13 @@ var Curve = function (params, param_b, m, k1, k2, base, order) {
             return ftrace(value, ob.modulus);
         },
         rand = function () {
-            var i, bits, words, rand_b, ret, rand24, wait = 0;
+            var bits, words, ret, rand24;
 
-            while (!sjcl.random.isReady()) {
-                wait++;
-            }
-            ob.wait = wait;
             bits = ob.order.bitLength();
             words = Math.floor((bits + 23) / 24);
-            rand_b = sjcl.random.randomWords(words);
+            rand24 = new Uint8Array(words * 3);
+            rand24 = crypto.getRandomValues(rand24);
 
-            rand24 = [0];
-            for (i = 0; i < rand_b.length; i++) {
-                rand24.push(0x0000FF & rand_b[i]);
-                rand24.push((0x00FF00 & rand_b[i]) >> 8);
-                rand24.push((0xFF0000 & rand_b[i]) >> 16);
-            }
             ret = new Big(rand24);
 
             return ret;
