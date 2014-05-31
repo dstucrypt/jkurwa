@@ -16,9 +16,15 @@ var CRLReason = asn1.define('CRLReason', function() {
 });
 exports.CRLReason = CRLReason;
 
+var ALGORITHMS_IDS = {
+    "1 2 804 2 1 1 1 1 2 1": "Gost34311",
+    '1 2 804 2 1 1 1 1 1 1 3': "Gost28147-cfb",
+};
+exports.ALGORITHMS_IDS = ALGORITHMS_IDS;
+
 var AlgorithmIdentifier = asn1.define('AlgorithmIdentifier', function() {
   this.seq().obj(
-    this.key('algorithm').objid(),
+    this.key('algorithm').objid(ALGORITHMS_IDS),
     this.key('parameters').optional().any()
   );
 });
