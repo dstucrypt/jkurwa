@@ -1,3 +1,13 @@
+try {
+  navigator.appName;
+} catch(e) {
+  if (typeof(process) !== 'undefined') {
+    navigator = {};
+  } else {
+    throw e;
+  }
+};
+
 // Copyright (c) 2005  Tom Wu
 // All Rights Reserved.
 // See "LICENSE" for details.
