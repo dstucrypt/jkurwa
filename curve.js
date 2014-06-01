@@ -263,8 +263,7 @@ var Point = function (p_curve, p_x, p_y) {
             trace_y = ftrace(y, modulus);
 
             if ((k === true && trace_y === 0) || (k === false && trace_y !== 0)) {
-                console.log("do add");
-                y = y.add(ONE);
+                y = y.xor(ONE);
             }
 
             y = fmul(y, val, modulus);

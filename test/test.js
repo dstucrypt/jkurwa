@@ -166,6 +166,26 @@ describe('Point', function() {
 
             assert.equal(true, pt.equals(curve.base));
         })
+
+        it("should check tax office pubkey decompression", function() {
+            var compressed = new Big("01A77131A7C14F9AA6EA8C760D39673D5F0330FAB1118D55B55B7AF0735975485F", 16);
+            var pt = curve.point(compressed);
+            var expect_pt = curve.point(
+                new Big("01A77131A7C14F9AA6EA8C760D39673D5F0330FAB1118D55B55B7AF0735975485F", 16),
+                new Big("DC058ADA665D99084038B5F914FB9CF7214760A4865B49CAF7F4BE7379F3A395", 16)
+            );
+
+            assert.equal(true, pt.equals(expect_pt));
+
+            compressed = new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 16);
+            var pt = curve.point(compressed);
+            var expect_pt = curve.point(
+                new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7", 16),
+                new Big("010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF", 16)
+            );
+
+            assert.equal(true, pt.equals(expect_pt));
+        })
     })
 
     describe("#compress()", function() {
