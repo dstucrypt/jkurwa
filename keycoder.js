@@ -173,7 +173,7 @@ var Keycoder = function() {
         },
         cert_parse: function(data) {
             var cert = rfc3280.Certificate.decode(data, 'der');
-            return new model.Certificate(cert);
+            return new models.Certificate(cert);
         },
         is_pem: function(indata) {
             if(indata.constructor === Uint8Array) {
