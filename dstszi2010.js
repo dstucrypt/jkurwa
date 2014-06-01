@@ -127,7 +127,8 @@ var KeyAgreeRecipientIdentifier = asn1.define('KeyAgreeRecipientIdentifier', fun
 
 var RecipientEncryptedKey = asn1.define('RecipientEncryptedKey', function() {
     this.seq().obj(
-        this.key('rid').use(KeyAgreeRecipientIdentifier)
+        this.key('rid').use(KeyAgreeRecipientIdentifier),
+        this.key('encryptedKey').octstr()
     )
 });
 
@@ -176,3 +177,20 @@ ContentInfo.contentModel = {
 
 
 module.exports.ContentInfo = ContentInfo;
+
+var WrapAlgo = asn1.define('WrapAlgo', function() {
+    this.seq().obj(
+        this.key('algorithm').objid(rfc3280.ALGORITHMS_IDS),
+        this.key("parameters").null_()
+    )
+})
+
+var SharedInfo = asn1.define('SharedInfo', function() {
+    this.seq().obj(
+        this.key("keyInfo").use(WrapAlgo),
+        this.key("entityInfo").optional().explicit(0).octstr(),
+        this.key("suppPubInfo").explicit(2).octstr()
+    );
+});
+
+module.exports.SharedInfo = SharedInfo;
