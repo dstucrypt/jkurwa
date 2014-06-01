@@ -19,6 +19,7 @@ exports.CRLReason = CRLReason;
 var ALGORITHMS_IDS = {
     "1 2 804 2 1 1 1 1 2 1": "Gost34311",
     '1 2 804 2 1 1 1 1 1 1 3': "Gost28147-cfb",
+    "1 2 804 2 1 1 1 1 1 1 5": "Gost28147-cfb-wrap",
 };
 exports.ALGORITHMS_IDS = ALGORITHMS_IDS;
 
