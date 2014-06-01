@@ -1,8 +1,9 @@
 var asn1 = require('asn1.js'),
     Big = require('./3rtparty/jsbn.packed.js'),
     rfc3280 = require('./rfc3280.js'),
-    Certificate = rfc3280.Certificate,
     b64_decode = require('./base64.js').b64_decode,
+    models = require('./lib/models/index.js'),
+    util = require('./lib/util.js'),
     Buffer = require('buffer').Buffer;
 
 var Keycoder = function() {
@@ -14,9 +15,6 @@ var Keycoder = function() {
         '1 2 804 2 1 1 1 1 1 2': "GOST_34311_HMAC",
         '1 2 804 2 1 1 1 1 1 1 3': "GOST_28147_CFB",
         '1 2 804 2 1 1 1 1 3 1 1': "DSTU_4145_LE",
-
-        '1 2 804 2 1 1 1 11 1 4 1 1': 'DRFO',
-        '1 2 804 2 1 1 1 11 1 4 2 1': 'EDRPOU',
     };
 
     var ob = {
@@ -89,71 +87,6 @@ var Keycoder = function() {
                 this.key('attr').implicit(0).seqof(ob.Attr)
             );
         }),
-        IPN_VAL: asn1.define('IPN_VAL', function() {
-            this.implicit(0x13).octstr()
-        }),
-        IPN_ID: asn1.define('IPN_ID', function() {
-            this.seq().obj(
-                this.key('id').objid(OID),
-                this.key("val").setof(ob.IPN_VAL)
-            )
-        }),
-        IPN: asn1.define('IPN', function() {
-            this.seqof(ob.IPN_ID)
-        }),
-        add_zero: function(u8, reorder) {
-            var ret = [];
-            if(reorder === true) {
-            } else {
-                ret.push(0);
-            }
-            for(var i=0; i<u8.length; i++) {
-                ret.push(u8[i]);
-            }
-
-            if(reorder === true) {
-                ret.push(0);
-                ret = ret.reverse();
-            }
-            return ret;
-        },
-        strFromUtf8Ab: function(ab) {
-                return decodeURIComponent(escape(String.fromCharCode.apply(null, ab)));
-        },
-        parse_ipn: function(data) {
-            var asn_ib = ob.IPN.decode(data, 'der');
-            var i, part, ret = {};
-            for(i = 0; i < asn_ib.length; i++) {
-                part = asn_ib[i];
-                ret[part.id] = String.fromCharCode.apply(null, part.val[0]);
-            }
-            return ret;
-        },
-        parse_ext: function(asn_ob) {
-            var ret, i, part;
-            ret = {};
-            for(i = 0; i< asn_ob.length; i++) {
-                part = asn_ob[i];
-                ret[part.extnID] = part.extnValue;
-            }
-            ret.ipn = ob.parse_ipn(ret.subjectDirectoryAttributes);
-            return ret;
-        },
-        parse_dn: function(asn_ob) {
-            var ret, i, j, part;
-            ret = {};
-            for(i = 0; i < asn_ob.length; i++) {
-                for(j = 0; j < asn_ob[i].length; j++) {
-                    part = asn_ob[i][j];
-                    if ((part.value[0] == 0xC) && part.value[1] === part.value.length -2) {
-                        ret[part.type] = ob.strFromUtf8Ab(part.value.slice(2));
-                    } else {
-                        ret[part.type] = part.value;
-                    }
-                }
-            }
-            return ret;
-        },
         to_pem: function(b64, desc) {
             var begin, end;
             if(desc === undefined) {
@@ -225,34 +158,22 @@ var Keycoder = function() {
         privkey_parse: function(data) {
             var priv = ob.Privkey.decode(data, 'der');
             return {
-                param_d: new Big(ob.add_zero(priv.param_d, true)),
+                param_d: new Big(util.add_zero(priv.param_d, true)),
                 curve: {
                     m: priv.priv0.p.p.p.param_m,
                     k1: priv.priv0.p.p.p.param_k1,
                     a: new Big([priv.priv0.p.p.param_a]),
-                    b: new Big(ob.add_zero(priv.priv0.p.p.param_b, true)),
-                    order: new Big(ob.add_zero(priv.priv0.p.p.order)),
-                    base: new Big(ob.add_zero(priv.priv0.p.p.bp, true)),
+                    b: new Big(util.add_zero(priv.priv0.p.p.param_b, true)),
+                    order: new Big(util.add_zero(priv.priv0.p.p.order)),
+                    base: new Big(util.add_zero(priv.priv0.p.p.bp, true)),
                 },
                 sbox: priv.priv0.p.sbox,
                 format: "privkey",
             }
         },
         cert_parse: function(data) {
-            var cert = Certificate.decode(data, 'der');
-            var tbs = cert.tbsCertificate;
-            var pub = tbs.subjectPublicKeyInfo.subjectPublicKey.data.slice(2);
-            return {
-                format: "x509",
-                pubkey: new Big(ob.add_zero(pub, true)),
-                valid: {
-                    from: tbs.validity.notBefore.value,
-                    to: tbs.validity.notAfter.value
-                },
-                extension: ob.parse_ext(cert.tbsCertificate.extensions.e),
-                issuer: ob.parse_dn(cert.tbsCertificate.issuer.value),
-                subject: ob.parse_dn(cert.tbsCertificate.subject.value)
-            };
+            var cert = rfc3280.Certificate.decode(data, 'der');
+            return new model.Certificate(cert);
         },
         is_pem: function(indata) {
             if(indata.constructor === Uint8Array) {

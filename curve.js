@@ -8,6 +8,7 @@ var Big = require('./3rtparty/jsbn.packed.js'),
     base64 = require('./base64.js'),
     rfc3280 = require('./rfc3280.js'),
     dstszi2010 = require('./dstszi2010.js'),
+    models = require('./lib/models/index.js'),
     ZERO = new Big("0"),
     ONE = new Big("1");
 
@@ -557,3 +558,4 @@ module.exports.b64_decode = base64.b64_decode;
 module.exports.b64_encode = base64.b64_encode;
 module.exports.rfc3280 = rfc3280;
 module.exports.dstszi2010 = dstszi2010;
+module.exports.models = models;
