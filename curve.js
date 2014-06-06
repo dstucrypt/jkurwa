@@ -3,143 +3,15 @@
 
 'use strict';
 
-var Big = require('./3rtparty/jsbn.packed.js'),
-    Keycoder = require('./keycoder.js'),
+var Keycoder = require('./keycoder.js'),
     base64 = require('./base64.js'),
     rfc3280 = require('./rfc3280.js'),
     dstszi2010 = require('./dstszi2010.js'),
     models = require('./lib/models/index.js'),
-    ZERO = new Big("0"),
-    ONE = new Big("1");
-
-var fmod = function (val, modulus) {
-    var rv, bitm_l, mask;
-    if (val.compareTo(modulus) < 0) {
-        return val;
-    }
-    rv = val;
-    bitm_l = modulus.bitLength();
-    while (rv.bitLength() >= bitm_l) {
-        mask = modulus.shiftLeft(rv.bitLength() - bitm_l);
-        rv = rv.xor(mask);
-    }
-
-    return rv;
-};
-var fmul = function (value_1, value_2, modulus) {
-    var ret = ZERO, j, bitl_1;
-
-    bitl_1 = value_1.bitLength();
-    for (j = 0; j < bitl_1; j++) {
-        if (value_1.testBit(j)) {
-            ret = ret.xor(value_2);
-        }
-        value_2 = value_2.shiftLeft(1);
-    }
-    return fmod(ret, modulus);
-
-};
-var finv = function (value, modulus) {
-    var b, c, u, v, j, tmp;
-
-    b = ONE;
-    c = ZERO;
-    u = fmod(value, modulus);
-    v = modulus;
-
-    while (u.bitLength() > 1) {
-        j = u.bitLength() - v.bitLength();
-        if (j < 0) {
-            tmp = u;
-            u = v;
-            v = tmp;
-
-            tmp = c;
-            c = b;
-            b = tmp;
-
-            j = -j;
-        }
-
-        u = u.xor(v.shiftLeft(j));
-        b = b.xor(c.shiftLeft(j));
-    }
-
-    return b;
-};
-var ftrace = function (value, modulus) {
-    var rv = value,
-        bitm_l = modulus.bitLength(),
-        idx;
-
-    for (idx = 1; idx <= bitm_l - 2; idx++) {
-        rv = fmul(rv, rv, modulus);
-        rv = rv.xor(value);
-    }
-
-    return rv.intValue();
-};
-var fsquad_odd = function (value, modulus) {
-    var val_a = fmod(value, modulus),
-        val_z = val_a,
-        bitl_m = modulus.bitLength(),
-        range_to = (bitl_m - 2) / 2,
-        val_w,
-        idx;
-
-    for (idx = 1; idx <= range_to; idx++) {
-        val_z = fmul(val_z, val_z, modulus);
-        val_z = fmul(val_z, val_z, modulus);
-        val_z = val_z.xor(val_a);
-    }
-
-    val_w = fmul(val_z, val_z, modulus);
-    val_w = val_w.xor(val_z, val_w);
-
-    if (val_w.compareTo(val_a) === 0) {
-        return val_z;
-    }
-
-    throw new Error("squad eq fail");
-};
-var fsquad = function (value, modulus) {
-    var ret;
-    if (modulus.testBit(0)) {
-        ret = fsquad_odd(value, modulus);
-    }
-
-    return fmod(ret, modulus);
-};
-var Field = function (param_modulus, value, is_mod) {
-    var modulus = param_modulus, ob,
-        mod = function (val) {
-            return fmod(val, modulus);
-        },
-        mul = function (val) {
-            return fmul(val, ob.value, modulus);
-        },
-        add = function (val) {
-            return ob.value.xor(val);
-        },
-        inv = function () {
-            return finv(ob.value, modulus);
-        };
-    ob = {
-        "mul": mul,
-        "mod": mod,
-        "add": add,
-        "inv": inv,
-        "value": value,
-    };
-
-    if (is_mod !== true) {
-        ob.value = mod(value);
-    }
-    return ob;
-};
+    gf2m = require('./lib/gf2m.js');
 
 var Point = function (p_curve, p_x, p_y) {
-    var zero = ZERO,
+    var zero = p_curve.zero(),
         modulus = p_curve.modulus,
         ob,
         coords,
@@ -147,12 +19,11 @@ var Point = function (p_curve, p_x, p_y) {
             var a, x0, x1, y0, y1, x2, y2, point_2, lbd, tmp, tmp2;
 
             a = p_curve.param_a;
-            point_2 = new Point(p_curve, zero, zero);
 
-            x0 = ob.x.value;
-            y0 = ob.y.value;
-            x1 = point_1.x.value;
-            y1 = point_1.y.value;
+            x0 = ob.x;
+            y0 = ob.y;
+            x1 = point_1.x;
+            y1 = point_1.y;
 
             if (ob.is_zero()) {
                 return point_1;
@@ -162,47 +33,49 @@ var Point = function (p_curve, p_x, p_y) {
                 return ob;
             }
 
-            if (x0.compareTo(x1) !== 0) {
-                tmp = y0.xor(y1);
-                tmp2 = x0.xor(x1);
-                lbd = fmul(tmp, finv(tmp2, modulus),  modulus);
-                x2 = a.xor(fmul(lbd, lbd, modulus));
-                x2 = x2.xor(lbd);
-                x2 = x2.xor(x0);
-                x2 = x2.xor(x1);
+            if (!x0.equals(x1)) {
+                tmp = y0.add(y1);
+                tmp2 = x0.add(x1);
+                lbd = tmp.mod_mul(tmp2.invert(true, p_curve._reuse_buf));
+                x2 = a.add(lbd.mod_mul(lbd, p_curve._reuse_bufx2));
+                x2.addM(lbd);
+                x2.addM(x0);
+                x2.addM(x1);
             } else {
-                if (y1.compareTo(y0) !== 0) {
+                if (y1.equals(y0) === false) {
                     return point_2;
                 }
-                if (x1.compareTo(zero) === 0) {
+                if (x1.is_zero()) {
                     return point_2;
                 }
 
-                lbd = x1.xor(point_1.y.mul(point_1.x.inv()));
-                x2 = fmul(lbd, lbd, modulus).xor(a);
-                x2 = x2.xor(lbd);
+                lbd = point_1.y.mod_mul(point_1.x.invert(false, p_curve._reuse_buf));
+                lbd.addM(x1);
+                x2 = lbd.mod_mul(lbd).add(a);
+                x2.addM(lbd);
             }
-            y2 = fmul(lbd, x1.xor(x2), modulus);
-            y2 = y2.xor(x2);
-            y2 = y2.xor(y1);
+            y2 = lbd.mod_mul(x1.add(x2));
+            y2.addM(x2);
+            y2.addM(y1);
 
-            point_2.x.value = x2;
-            point_2.y.value = y2;
+            if(x2._is_field !== true) throw new Error();
+            if(y2._is_field !== true) throw new Error();
 
-            return point_2;
-
+            return p_curve.point(x2, y2);
         },
         mul = function (param_n) {
-            var point_s = new Point(p_curve, zero, zero), cmp, point,
+            var point_s = p_curve.Inf,
+                cmp, point,
                 bitn_l = param_n.bitLength(),
                 j;
 
-            cmp = param_n.compareTo(zero);
-            if (cmp === 0) {
+            if (param_n.is_zero()) {
                 return point_s;
             }
 
-            if (cmp < 0) {
+            point = this;
+
+            if (param_n.negative) {
                 param_n = param_n.negate();
                 point = ob.negate();
             } else {
@@ -210,7 +83,7 @@ var Point = function (p_curve, p_x, p_y) {
             }
 
             for (j = bitn_l - 1; j >= 0; j--) {
-                point_s = point_s.add(point_s);
+                point_s = point_s.twice();
                 if (param_n.testBit(j)) {
                     point_s = point_s.add(point);
                 }
@@ -218,11 +91,25 @@ var Point = function (p_curve, p_x, p_y) {
 
             return point_s;
         },
+        twice = function () {
+            return ob.add(ob);
+        },
+        twicePlus = function (point_1) {
+            return ob.add(ob).add(point_1);
+        },
+        timesPow2 = function (e) {
+            var p = ob;
+            while (--e >= 0)
+            {
+                p = p.twice();
+            }
+            return p;
+        },
         negate = function () {
-            return new Point(p_curve, ob.x.value, ob.x.value.xor(ob.y.value));
+            return new Point(p_curve, ob.x, ob.x.add(ob.y));
         },
         is_zero = function () {
-            return (ob.x.value.compareTo(zero) === 0) && (ob.y.value.compareTo(zero) === 0);
+            return ob.x.is_zero() && ob.y.is_zero();
         },
         expand = function (val) {
             var pa = p_curve.param_a,
@@ -295,7 +182,7 @@ var Point = function (p_curve, p_x, p_y) {
             );
         },
         toString = function () {
-            return "<Point x:" + ob.x.value.toString(16) + ", y:" + ob.y.value.toString(16) + " >";
+            return "<Point x:" + ob.x.toString(16) + ", y:" + ob.y.toString(16) + " >";
         };
 
     if (p_y === undefined) {
@@ -312,16 +199,19 @@ var Point = function (p_curve, p_x, p_y) {
         "expand": expand,
         "compress": compress,
         "equals": equals,
+        "twicePlus": twicePlus,
+        "timesPow2": timesPow2,
+        "twice": twice,
         "toString": toString,
-        "x": new Field(modulus, p_x),
-        "y": new Field(modulus, p_y),
+        "x": p_x,
+        "y": p_y,
+        "Inf": p_curve.Inf,
     };
     return ob;
 };
 
 var Pub = function (p_curve, point_q) {
-    var zero = ZERO,
-        ob,
+    var ob,
         help_verify = function (hash_val, s, r) {
             if (zero.compareTo(s) === 0) {
                 throw new Error("Invalid sig component S");
@@ -385,17 +275,19 @@ var Priv = function (p_curve, param_d) {
         help_sign = function (hash_v, rand_e) {
             var eG, r, s, hash_field;
 
-            hash_field = new Field(p_curve.modulus, hash_v, true);
+            hash_field = p_curve.field(hash_v, 'hex');
             eG = p_curve.base.mul(rand_e);
-            if (eG.x.value.compareTo(ZERO) === 0) {
+
+            if (eG.x.is_zero()) {
                 return null;
             }
-            r = hash_field.mul(eG.x.value);
+            r = hash_field.mod_mul(eG.x);
             r = p_curve.truncate(r);
-            if (r.compareTo(ZERO) === 0) {
+            if (r.is_zero()) {
                 return null;
             }
 
+            // convert into bn
             s = param_d.multiply(r).mod(p_curve.order);
             s = s.add(rand_e).mod(p_curve.order);
 
@@ -418,7 +310,8 @@ var Priv = function (p_curve, param_d) {
 
         },
         pub = function () {
-            return new Pub(p_curve, p_curve.base.mul(param_d).negate());
+            var base_mul = p_curve.base.mul(param_d);
+            return new Pub(p_curve, base_mul.negate());
         };
 
     ob = {
@@ -432,28 +325,24 @@ var Priv = function (p_curve, param_d) {
 var Curve = function (params, param_b, m, k1, k2, base, order) {
     if (params.base === undefined) {
         params = {
-            param_a: params,
-            param_b: param_b,
+            a: params,
+            b: param_b,
             m: m,
-            k1: k1,
-            k2: k2,
+            ks: [m, k1, k2],
             base: base,
             order: order,
         };
     }
     var ob,
-        comp_modulus = function (k3, k2, k1) {
-            var modulus = ZERO;
-            modulus = modulus.setBit(k1);
-            modulus = modulus.setBit(k2);
-            modulus = modulus.setBit(k3);
-            ob.modulus = modulus;
-        },
         set_base = function (base_x, base_y) {
-            ob.base = ob.point(base_x, base_y);
+            var x = this.field(base_x, 'hex'),
+                y = base_y ? this.field(base_y, 'hex') : undefined;
+            ob.base = ob.point(x, y);
         },
-        field = function (val) {
-            return new Field(ob.modulus, val);
+        field = function (val, fmt) {
+            var ret = new gf2m.Field(null, null, this);
+            ret.setValue(val, fmt);
+            return ret;
         },
         point = function (px, py) {
             return new Point(ob, px, py);
@@ -470,15 +359,15 @@ var Curve = function (params, param_b, m, k1, k2, base, order) {
         },
         contains = function (point) {
             var lh, y2;
-            lh = point.x.value.xor(ob.param_a);
-            lh = fmul(lh, point.x.value, ob.modulus);
-            lh = lh.xor(point.y.value);
-            lh = fmul(lh, point.x.value, ob.modulus);
-            lh = lh.xor(ob.param_b);
-            y2 = fmul(point.y.value, point.y.value, ob.modulus);
-            lh = lh.xor(y2);
+            lh = point.x.add(ob.param_a);
+            lh = lh.mod_mul(point.x);
+            lh = lh.add(point.y);
+            lh = lh.mod_mul(point.x);
+            lh = lh.add(ob.param_b);
+            y2 = point.y.mod_mul(point.y);
+            lh = lh.add(y2);
 
-            return lh.compareTo(ZERO) === 0;
+            return lh.is_zero();
         },
         trace = function (value) {
             return ftrace(value, ob.modulus);
@@ -486,14 +375,12 @@ var Curve = function (params, param_b, m, k1, k2, base, order) {
         rand = function () {
             var bits, words, ret, rand24;
 
-            bits = ob.order.bitLength();
-            words = Math.floor((bits + 23) / 24);
-            rand24 = new Uint8Array(words * 3);
-            rand24 = crypto.getRandomValues(rand24);
+            rand24 = crypto.getRandomValues(this.mod_words);
 
-            ret = new Big(rand24);
-
-            return ret;
+            return this.field(ret);
+        },
+        zero = function () {
+            return new gf2m.Field(new Uint32Array(this.mod_words), undefined, this);
         },
         keygen = function () {
             var rand_d = ob.rand(), priv, pub;
@@ -506,54 +393,73 @@ var Curve = function (params, param_b, m, k1, k2, base, order) {
             }
         };
 
+    var calc_modulus = function(ks) {
+        var ret = new Uint32Array(this.mod_words),
+            i, word, bit;
+
+        for(i=0; i < ks.length; i++) {
+            word = Math.floor(ks[i] / 32);
+            bit = ks[i] % 32;
+            ret[word] |= 1 << bit;
+        }
+
+        return ret;
+    };
+
+    var mod_words = Math.ceil(params.ks[0] / 32);
+
     ob = {
         "field": field,
         "point": point,
-        "comp_modulus": comp_modulus,
         "set_base": set_base,
-        "modulus": ZERO,
         "truncate": truncate,
         "contains": contains,
         "trace": trace,
         "rand": rand,
+        "zero": zero,
+        "ks": params.ks,
         "keygen": keygen,
-        "order": params.order,
-        "param_a": params.a,
-        "param_b": params.b,
         "param_m": params.m,
+        "Inf": null,
+        "mod_words": mod_words,
+        "calc_modulus": calc_modulus,
+        "comp_modulus": calc_modulus,
+        "_reuse_buf": new Uint32Array(mod_words*2),
+        "_reuse_bufx2": new Uint32Array(mod_words + mod_words + 20),
     };
-    ob.comp_modulus(params.m, params.k1, params.k2);
+    ob.param_a = ob.field(params.a, 'hex');
+    ob.param_b = ob.field(params.b, 'hex');
+    ob.order = ob.field(params.order, 'hex');
+
     if (params.base.x === undefined) {
         ob.set_base(params.base);
     } else {
         ob.set_base(params.base.x, params.base.y);
     }
+
+    ob.Inf = ob.point(ob.zero(), ob.zero());
     return ob;
 };
 
 Curve.defined = {
     DSTU_B_257: new Curve({
-        a: new Big("0", 16),
-        b: new Big("01CEF494720115657E18F938D7A7942394FF9425C1458C57861F9EEA6ADBE3BE10", 16),
+        a: "0",
+        b: "01CEF494720115657E18F938D7A7942394FF9425C1458C57861F9EEA6ADBE3BE10",
 
         base: {
-            x: new Big('002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7', 16),
-            y: new Big('010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF', 16)
+            x: '002A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7',
+            y: '010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF',
         },
 
-        order: new Big('800000000000000000000000000000006759213AF182E987D3E17714907D470D', 16),
-
+        order: '800000000000000000000000000000006759213AF182E987D3E17714907D470D',
         m: 257,
-        k1: 12,
-        k2: 0,
+        ks: [257, 12, 0],
     })
 };
 
 module.exports = Curve;
-module.exports.Field = Field;
 module.exports.Priv = Priv;
 module.exports.Keycoder = Keycoder;
-module.exports.Big = Big;
 module.exports.b64_decode = base64.b64_decode;
 module.exports.b64_encode = base64.b64_encode;
 module.exports.rfc3280 = rfc3280;
