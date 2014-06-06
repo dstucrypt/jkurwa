@@ -2,7 +2,7 @@
   "name": "jkurwa",
   "version": "0.1.0",
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
-  "main": "curve.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "mocha --reporter spec ./test/test.js"
   },

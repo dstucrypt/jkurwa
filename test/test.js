@@ -12,11 +12,29 @@ try {
     }
 }
 
+try {
+    crypto.getRandomValues;
+} catch (e) {
+    crypto = {
+        // Moch random only for testing purposes.
+        // SHOULD NOT BE USED IN REAL CODE.
+        getRandomValues: function (buf) {
+            var i;
+            for(i=0; i < buf.length; i++) {
+                buf[i] = Math.random() * 32;
+            }
+
+            return buf;
+        }
+    }
+}
+
 var assert = require("assert"),
-    Curve = require('../curve.js'),
-    Big = Curve.Big,
-    Field = Curve.Field,
-    Priv = Curve.Priv,
+    jk = require('../lib/index.js'),
+    Curve = jk.Curve,
+    Big = jk.Big,
+    Field = jk.Field,
+    Priv = jk.Priv,
     ZERO = new Big("0");
 
 
