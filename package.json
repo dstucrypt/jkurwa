@@ -19,9 +19,9 @@
   "author": "Ilya Petrov",
   "license": "BSD",
   "bugs": {
-    "url": "https://github.com/muromec/jkurwe/issues"
+    "url": "https://github.com/muromec/jkurwa/issues"
   },
-  "homepage": "https://github.com/muromec/jkurwe/",
+  "homepage": "https://github.com/muromec/jkurwa/",
   "devDependencies": {
     "mocha": "~1.14.0"
   },
