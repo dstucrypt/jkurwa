@@ -23,8 +23,8 @@ text = new Buffer("{'msg': 'hello', 'code': 1}");
 curve = jk.Curve.defined.DSTU_B_257;
 
 // agreed keys
-sender_priv = jk.Priv(curve, new jk.Big('40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d', 16));
-reciever_pub = jk.Pub(curve, curve.point(new jk.Big('e54bf3f92a281d02f46ad5637387a8f13c9698816cb4f8beadfc0565fa63d6b1', 16)));
+sender_priv = curve.pkey('40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d');
+reciever_pub = curve.pubkey('e54bf3f92a281d02f46ad5637387a8f13c9698816cb4f8beadfc0565fa63d6b1');
 
 // random values choosen by sender
 //  ukm (salt, 64 bytes), iv (cipher param, 8 bytes), cek - 32 bytes key 

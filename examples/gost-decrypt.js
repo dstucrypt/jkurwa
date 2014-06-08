@@ -4,8 +4,8 @@ var jk = require('../lib/index.js'),
 curve = jk.Curve.defined.DSTU_B_257; // standard curve
 
 // keys used
-reciever_priv = jk.Priv(curve, new jk.Big('171b130e180d060f1f1a0807011816170f060b040a10121817111a0d0b0b0f03', 16));
-sender_pub = jk.Pub(curve, curve.point(new jk.Big('40ad1cb010531b504177577d8d4ad148219eb0c9bda61c9a0d4df1650d8cbe22', 16)));
+reciever_priv = curve.pkey('171b130e180d060f1f1a0807011816170f060b040a10121817111a0d0b0b0f03');
+sender_pub = curve.pubkey('40ad1cb010531b504177577d8d4ad148219eb0c9bda61c9a0d4df1650d8cbe22');
 
 // recived message
 // ukm (salt), iv (cipher param) and encrypted text
