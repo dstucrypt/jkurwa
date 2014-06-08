@@ -17,6 +17,12 @@ describe('API', function () {
             priv = curve.pkey('40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d');
             assert.equal(priv.type, 'Priv');
             assert.equal(priv.d.equals(expect_d), true);
+
+            priv = jk.pkey('DSTU_B_257', '40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d');
+            assert.equal(priv.type, 'Priv');
+            assert.equal(priv.d.equals(expect_d), true);
+            assert.equal(curve, priv.curve);
+
         });
     });
 
