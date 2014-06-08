@@ -4,7 +4,7 @@ var jk = require('../lib/index.js'),
 curve = jk.Curve.defined.DSTU_B_257; // standard curve
 
 // keys used
-reciever_priv = curve.pkey('171b130e180d060f1f1a0807011816170f060b040a10121817111a0d0b0b0f03');
+reciever_priv = jk.pkey('DSTU_B_257', '171b130e180d060f1f1a0807011816170f060b040a10121817111a0d0b0b0f03');
 sender_pub = curve.pubkey('40ad1cb010531b504177577d8d4ad148219eb0c9bda61c9a0d4df1650d8cbe22');
 
 // recived message
