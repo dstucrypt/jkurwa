@@ -16,9 +16,9 @@ ciphered = new Buffer('9fa6c038bf04e8810f7d3d25beb6fd9ee7efe0698e4f1216f17316', 
 
 // generate shared secret and unwrap message key
 sharedkey = reciever_priv.sharedKey(sender_pub, ukm, em_gost.gost_kdf);
-cek = new Buffer(em_gost.gost_unwrap(sharedkey, wcek, iv));
+cek = em_gost.gost_unwrap(sharedkey, wcek, iv);
 
 // finally decrypt message
-text = new Buffer(em_gost.gost_decrypt_cfb(ciphered, cek, iv));
+text = em_gost.gost_decrypt_cfb(ciphered, cek, iv);
 
 console.log("deciphered text " + text);

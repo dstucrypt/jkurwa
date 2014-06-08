@@ -34,11 +34,11 @@ iv = new Buffer('09100509181c0515', 'hex');
 cek = new Buffer('11080811020a0d0913040f020111190b04060c101d1c0a0911060e160b121419', 'hex');
 
 // compute sharedkey and wrap encryption key
-sharedkey = new Buffer(sender_priv.sharedKey(reciever_pub, ukm, em_gost.gost_kdf));
-wcek = new Buffer(em_gost.gost_keywrap(sharedkey, cek, iv));
+sharedkey = sender_priv.sharedKey(reciever_pub, ukm, em_gost.gost_kdf);
+wcek = em_gost.gost_keywrap(sharedkey, cek, iv);
 
 // finally encrypt text
-ciphered = new Buffer(em_gost.gost_encrypt_cfb(text, cek, iv));
+ciphered = em_gost.gost_encrypt_cfb(text, cek, iv);
 
 console.log("sender should transmit following infomration to reciever: ");
 console.log("    wrapped key    : " + wcek.toString("hex"));
