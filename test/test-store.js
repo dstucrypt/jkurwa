@@ -61,6 +61,7 @@ describe('Keycoder', function () {
             assert.equal(key1.curve.b.toString(16), '1cef494720115657e18f938d7a7942394ff9425c1458c57861f9eea6adbe3be10');
             assert.equal(key1.curve.order.toString(16), '800000000000000000000000000000006759213af182e987d3e17714907d470d');
             assert.equal(key1.curve.base.toString(16), '2a29ef207d0e9b6c55cd260b306c7e007ac491ca1b10c62334a9e8dcd8d20fb6');
+            assert.equal(key1.param_d.toString(16), '1111111111111111111111111111111111111111111111111111111111111111');
 
             assert.equal(key2.format, 'privkey')
             assert.equal(key2.curve.m, 431);
@@ -69,6 +70,7 @@ describe('Keycoder', function () {
             assert.equal(key2.curve.b.toString(16), '3ce10490f6a708fc26dfe8c3d27c4f94e690134d5bff988d8d28aaeaede975936c66bac536b18ae2dc312ca493117daa469c640caf3');
             assert.equal(key2.curve.order.toString(16), '3fffffffffffffffffffffffffffffffffffffffffffffffffffffba3175458009a8c0a724f02f81aa8a1fcbaf80d90c7a95110504cf');
             assert.equal(key2.curve.base.toString(16), '1a62ba79d98133a16bbae7ed9a8e03c32e0824d57aef72f88986874e5aae49c27bed49a2a95058068426c2171e99fd3b43c5947c857c');
+            assert.equal(key2.param_d.toString(16), '888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888');
 
         })
     });
