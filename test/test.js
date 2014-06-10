@@ -41,18 +41,36 @@ var assert = require("assert"),
 describe('Curve', function() {
     describe('#comp_modulus()', function() {
         it('should compute curve modulus', function() {
-            var curve = Curve.defined.DSTU_B_257,
+            var curve = jk.std_curve('DSTU_PB_257'),
                 mod_hex = "20000000000000000000000000000000000000000000000000000000000001001",
-                mod = new Big(mod_hex, 16);
+                mod = new Big(mod_hex, 16),
+                modulus;
 
-            curve.comp_modulus(257, 12, 0);
-            assert.equal(0, mod.compareTo(curve.modulus));
+            modulus = curve.comp_modulus(257, [12, 0]);
+            assert.equal(0, mod.compareTo(modulus));
             assert.equal(258, curve.modulus.bitLength());
+        })
+
+        it('should not change modulus value on curve', function() {
+            var curve = jk.std_curve('DSTU_PB_257'),
+                mod_hex = "20000000000000000000000000000000000000000000000000000000000001003",
+                mod = new Big(mod_hex, 16),
+                mod_before,
+                modulus;
+
+            mod_before = curve.modulus;
+            modulus = curve.comp_modulus(257, [12, 1]);
+
+            assert.equal(true, mod.equals(modulus));
+            assert.equal(258, curve.modulus.bitLength());
+            assert.equal(true, mod_before.equals(curve.modulus));
+            assert.equal(false, mod.equals(curve.modulus));
+
         })
     })
     describe('#contains', function() {
 
-        curve = Curve.defined.DSTU_B_257;
+        var curve = jk.std_curve('DSTU_PB_257');
         pub_x = new Big('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 16),
         pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16);
 
@@ -65,7 +83,9 @@ describe('Curve', function() {
 
     describe("#generate()", function() {
         it("should generate new private key", function() {
-            var priv, pub;
+            var priv, pub, curve;
+
+            curve = jk.std_curve('DSTU_PB_257');
 
             priv = curve.keygen();
             pub = priv.pub();
@@ -75,7 +95,7 @@ describe('Curve', function() {
 })
 
 describe("Field", function() {
-    var curve = Curve.defined.DSTU_B_257;
+    var curve = jk.std_curve('DSTU_PB_257');
 
     describe("#mod", function() {
         it("should return mod of value", function() {
@@ -118,7 +138,7 @@ describe("Field", function() {
 })
 
 describe('Point', function() {
-    var curve = Curve.defined.DSTU_B_257;
+    var curve = jk.std_curve('DSTU_PB_257');
 
     var RAND_E_HEX = '7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB',
         PUB_X_HEX = '00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589',
@@ -228,7 +248,7 @@ describe('Sign', function() {
         pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16),
         curve;
 
-    curve = Curve.defined.DSTU_B_257;
+    curve = jk.std_curve('DSTU_PB_257');
 
     describe("#help_sign", function() {
         it("should sign long binary value with privkey and provided E", function() {
@@ -267,7 +287,7 @@ describe('Sign', function() {
 })
 
 describe('Broken', function() {
-    var curve = Curve.defined.DSTU_B_257;
+    var curve = jk.std_curve('DSTU_PB_257');
 
     describe("#expand()", function() {
         it("should compute coordinates from compressed point", function() {

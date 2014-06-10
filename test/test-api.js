@@ -4,7 +4,7 @@ var assert = require("assert"),
     jk = require('../lib/index.js');
 
 describe('API', function () {
-    var curve = jk.Curve.defined.DSTU_B_257,
+    var curve = jk.std_curve('DSTU_PB_257'),
         expect_d = new jk.Big('40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d', 16),
         expect_pubx = new jk.Big('e54bf3f92a281d02f46ad5637387a8f13c9698816cb4f8beadfc0565fa63d6b0', 16);
 
@@ -18,7 +18,7 @@ describe('API', function () {
             assert.equal(priv.type, 'Priv');
             assert.equal(priv.d.equals(expect_d), true);
 
-            priv = jk.pkey('DSTU_B_257', '40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d');
+            priv = jk.pkey('DSTU_PB_257', '40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d');
             assert.equal(priv.type, 'Priv');
             assert.equal(priv.d.equals(expect_d), true);
             assert.equal(curve, priv.curve);
