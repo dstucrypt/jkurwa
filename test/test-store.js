@@ -38,32 +38,24 @@ var PEM_KEY2 = '-----BEGIN PRIVATE KEY-----\n' +
 '-----END PRIVATE KEY-----' ;
 
 describe('Keycoder', function () {
-    var keycoder = new jk.Keycoder();
-    var base_257 = new jk.Big('2a29ef207d0e9b6c55cd260b306c7e007ac491ca1b10c62334a9e8dcd8d20fb6', 16);
+    var keycoder = new jk.Keycoder(),
+        b257 = jk.std_curve('DSTU_PB_257'),
+        b431 = jk.std_curve('DSTU_PB_431');
 
     var check_257 = function (key) {
         assert.equal(key.type, 'Priv');
-        assert.equal(key.curve.m, 257);
-        assert.equal(key.curve.ks, '12');
-        assert.equal(key.curve.a.toString(16), '0');
-        assert.equal(key.curve.b.toString(16), '1cef494720115657e18f938d7a7942394ff9425c1458c57861f9eea6adbe3be10');
-        assert.equal(key.curve.order.toString(16), '800000000000000000000000000000006759213af182e987d3e17714907d470d');
-        assert.equal(key.curve.base.toString(16), '<Point x:2a29ef207d0e9b6c55cd260b306c7e007ac491ca1b10c62334a9e8dcd8d20fb7, y:10686d41ff744d4449fccf6d8eea03102e6812c93a9d60b978b702cf156d814ef >');
+
         assert.equal(key.d.toString(16), '1111111111111111111111111111111111111111111111111111111111111111');
 
+        assert.equal(b257.equals(key.curve), true);
     };
 
     var check_431 = function (key) {
 
         assert.equal(key.type, 'Priv');
-        assert.equal(key.curve.m, 431);
-        assert.equal(key.curve.ks.toString(), [5, 3, 1]);
-        assert.equal(key.curve.a.toString(16), '1');
-        assert.equal(key.curve.b.toString(16), '3ce10490f6a708fc26dfe8c3d27c4f94e690134d5bff988d8d28aaeaede975936c66bac536b18ae2dc312ca493117daa469c640caf3');
-        assert.equal(key.curve.order.toString(16), '3fffffffffffffffffffffffffffffffffffffffffffffffffffffba3175458009a8c0a724f02f81aa8a1fcbaf80d90c7a95110504cf');
-        assert.equal(key.curve.base.toString(16), '<Point x:1a62ba79d98133a16bbae7ed9a8e03c32e0824d57aef72f88986874e5aae49c27bed49a2a95058068426c2171e99fd3b43c5947c857d, y:70b5e1e14031c1f70bbefe96bdde66f451754b4ca5f48da241f331aa396b8d1839a855c1769b1ea14ba53308b5e2723724e090e02db9 >');
         assert.equal(key.d.toString(16), '888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888');
 
+        assert.equal(b431.equals(key.curve), true);
     };
 
     describe('#parse()', function() {
