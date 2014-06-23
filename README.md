@@ -8,6 +8,7 @@ GF2m ellipcit curves library in javascript.
 * Encypted containers can be parsed, but not deciphered (use em-gost)
    
 ![Yep](https://raw.githubusercontent.com/muromec/ukurwa4145/master/kdpv.jpg)
+[![Build Status](https://travis-ci.org/dstucrypt/jkurwa.svg?branch=master)](https://travis-ci.org/dstucrypt/jkurwa)
 
 Usage
 -----
