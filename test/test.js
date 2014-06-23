@@ -241,6 +241,7 @@ describe('Point', function() {
 describe('Sign', function() {
     var priv_d = new Big('2A45EAFE4CD469F811737780C57253360FBCC58E134C9A1FDCD10B0E4529A143', 16),
         hash_v = new Big('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 16),
+        hash_b = new Buffer('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 'hex'),
         rand_e = new Big('7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB', 16),
         sig_s = new Big('0CCC6816453A903A1B641DF999011177DF420D21A72236D798532AEF42E224AB', 16),
         sig_r = new Big('491FA1EF75EAEF75E1F20CF3918993AB37E06005EA8E204BC009A1FA61BB0FB2', 16),
@@ -263,9 +264,9 @@ describe('Sign', function() {
     describe("#sign", function() {
         it("should sign long binary value with privkey and generated E", function() {
             var priv = new Priv(curve, priv_d), sig;
-            sig = priv.sign(hash_v);
+            sig = priv.sign(hash_b);
 
-            assert.equal(Object.keys(sig).length, 2);
+            assert.equal(Object.keys(sig).length, 3);
         })
     })
 
