@@ -31,6 +31,7 @@ try {
 
 var assert = require("assert"),
     jk = require('../lib/index.js'),
+    gf2m = require('../lib/gf2m.js'),
     Curve = jk.Curve,
     Big = jk.Big,
     Field = jk.Field,
@@ -149,15 +150,18 @@ describe('Point', function() {
             var rand_e = new Big(RAND_E_HEX, 16),
                 pub_x = new Big(PUB_X_HEX, 16),
                 pub_y = new Big(PUB_Y_HEX, 16),
-                pp_x = new Big('176dbde19773dfd335665597e8d6a0ab678721a5bb7030f25dc4c48b809ef3520', 16),
-                pp_y = new Big('6e75301556ea5d571403086691030f024c026907c8e818b2eedd9184d12040ee', 16),
+                pp_x = new Field('176dbde19773dfd335665597e8d6a0ab678721a5bb7030f25dc4c48b809ef3520', 'hex', curve),
+                pp_y = new Field('6e75301556ea5d571403086691030f024c026907c8e818b2eedd9184d12040ee', 'hex', curve),
                 pub_q, pub_2q;
 
                 pub_q = curve.point(pub_x, pub_y);
                 pub_2q = pub_q.add(pub_q)
 
-                assert.equal(0, pub_2q.x.value.compareTo(pp_x))
-                assert.equal(0, pub_2q.y.value.compareTo(pp_y))
+                assert.equal(pub_2q.x.equals(pp_x), true);
+                assert.equal(pub_2q.y.equals(pp_y), true)
+
+                console.log("cnt " + gf2m.get_cnt());
+                console.log("icnt " + gf2m.get_icnt());
         })
     })
 
@@ -166,15 +170,19 @@ describe('Point', function() {
             var rand_e = new Big(RAND_E_HEX, 16),
                 pub_x = new Big(PUB_X_HEX, 16),
                 pub_y = new Big(PUB_Y_HEX, 16),
-                pp_x = new Big('f26df77ca4c807c6b94f5c577415a1fce603a85ae7678717e16cb9a78de32d15', 16),
-                pp_y = new Big('1785fded2804bea15b02c4fd785fd3e98ab2435b8d78da44e195a9a088d3fc2d4', 16),
+                pp_x = new Field('f26df77ca4c807c6b94f5c577415a1fce603a85ae7678717e16cb9a78de32d15', 'hex', curve),
+                pp_y = new Field('1785fded2804bea15b02c4fd785fd3e98ab2435b8d78da44e195a9a088d3fc2d4', 'hex', curve),
                 pub_q, point;
 
                 pub_q = curve.point(pub_x, pub_y);
                 point = pub_q.mul(rand_e);
 
-                assert.equal(0, point.x.value.compareTo(pp_x))
-                assert.equal(0, point.y.value.compareTo(pp_y))
+                assert.equal(point.x.equals(pp_x), true);
+                assert.equal(point.y.equals(pp_y), true);
+
+                console.log("cnt " + gf2m.get_cnt());
+                console.log("icnt " + gf2m.get_icnt());
+
         })
     })
 
