@@ -268,6 +268,15 @@ describe('Sign', function() {
 
             assert.equal(Object.keys(sig).length, 3);
         })
+
+        it("should return buffer with asn1 string", function() {
+            var priv = new Priv(curve, priv_d), sig;
+            sig = priv.sign(hash_b, 'short');
+
+            assert.equal(sig.length, 66);
+            assert.equal(sig[0], 4);
+            assert.equal(sig[1], 64);
+        });
     })
 
     describe("#pub", function() {
@@ -284,6 +293,23 @@ describe('Sign', function() {
             assert.equal(ok, true);
         })
     })
+
+    describe('sign_serialise()', function() {
+        it("Should return asn1 string", function () {
+            var asign, sign;
+
+            var hex = '0440b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f49ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c';
+
+            sign = {
+                s: new Big('ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab', 16),
+                r: new Big('491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2', 16)
+            };
+            asign = Priv.sign_serialise(sign, 'short');
+
+            assert.equal(asign.toString('hex'), hex);
+
+        });
+    });
 
 })
 
