@@ -203,7 +203,7 @@ describe('Point', function() {
         it("should compute coordinates from compressed point", function() {
             var pt = curve.point(ZERO, ZERO);
             var coords = pt.expand(ZERO);
-            assert.equal(0, ZERO.compareTo(coords.x));
+            assert.equal(coords.x.is_zero(), true);
 
             var compressed = new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 16);
             var coords = pt.expand(compressed);
