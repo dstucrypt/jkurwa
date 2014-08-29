@@ -102,10 +102,10 @@ describe("Field", function() {
         it("should return mod of value", function() {
             var field_a, value_a, expect_b;
 
-            value_a = new Big(val_hex, 16);
-            expect_b = new Big(rv_hex, 16);
+            value_a = new Field(val_hex, 'hex', curve);
+            expect_b = new Field(rv_hex, 'hex', curve);
             field_a = curve.field(value_a);
-            assert.equal(0, field_a.value.compareTo(expect_b));
+            assert.equal(true, field_a.equals(expect_b));
         })
     })
     
@@ -115,14 +115,14 @@ describe("Field", function() {
 
             hex_b = '01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C';
             expect_hex = '157b8e91c8b225469821fc836045a7c09c30d9fdee54b680c8247821f8c4e3352';
-            value_a = new Big(val_hex, 16);
-            value_b = new Big(hex_b, 16);
-            expect_c = new Big(expect_hex, 16);
+            value_a = new Field(val_hex, 'hex', curve);
+            value_b = new Field(hex_b, 'hex', curve);
+            expect_c = new Field(expect_hex, 'hex', curve);
 
             field_a = curve.field(value_a);
-            value_c = field_a.mul(value_b);
+            value_c = field_a.mod_mul(value_b);
 
-            assert.equal(0, value_c.compareTo(expect_c));
+            assert.equal(true, value_c.equals(expect_c));
 
         })
     })
@@ -130,10 +130,13 @@ describe("Field", function() {
     describe('#inv', function() {
         it("should return negative of r", function() {
             expect_r_hex = 'f5ae84d0c4dc2e7e89c670fb2083d124be50b413efb6863705bd63a5168352e0';
-            value_a = new Big(val_hex, 16);
+            value_a = new Field(val_hex, 'hex', curve);
+            expect_r = new Field(expect_r_hex, 'hex', curve);
             field_a = curve.field(value_a);
 
-            value_r = field_a.inv();
+            value_r = field_a.invert();
+
+            assert.equal(true, value_r.equals(expect_r));
         })
     })
 })
