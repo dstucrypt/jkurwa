@@ -71,9 +71,9 @@ describe('Curve', function() {
     })
     describe('#contains', function() {
 
-        var curve = jk.std_curve('DSTU_PB_257');
-        pub_x = new Big('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 16),
-        pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16);
+        var curve = jk.std_curve('DSTU_PB_257'),
+        pub_x = new Field('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 'hex', curve),
+        pub_y = new Field('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 'hex', curve);
 
         it("should check if point is part of curve", function() {
                 var pub_q = curve.point(pub_x, pub_y);
