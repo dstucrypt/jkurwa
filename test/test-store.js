@@ -45,7 +45,7 @@ describe('Keycoder', function () {
     var check_257 = function (key) {
         assert.equal(key.type, 'Priv');
 
-        assert.equal(key.d.toString(16), '1111111111111111111111111111111111111111111111111111111111111111');
+        assert.equal(key.d.toString(true), '1111111111111111111111111111111111111111111111111111111111111111');
 
         assert.equal(b257.equals(key.curve), true);
     };
@@ -53,7 +53,7 @@ describe('Keycoder', function () {
     var check_431 = function (key) {
 
         assert.equal(key.type, 'Priv');
-        assert.equal(key.d.toString(16), '888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888');
+        assert.equal(key.d.toString(true), '888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888');
 
         assert.equal(b431.equals(key.curve), true);
     };

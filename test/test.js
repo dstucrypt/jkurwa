@@ -170,7 +170,7 @@ describe('Point', function() {
 
     describe("#mul", function() {
         it("should produce specific point", function() {
-            var rand_e = new Big(RAND_E_HEX, 16),
+            var rand_e = new Field(RAND_E_HEX, 'hex', curve),
                 pub_x = new Big(PUB_X_HEX, 16),
                 pub_y = new Big(PUB_Y_HEX, 16),
                 pp_x = new Field('f26df77ca4c807c6b94f5c577415a1fce603a85ae7678717e16cb9a78de32d15', 'hex', curve),
@@ -208,11 +208,9 @@ describe('Point', function() {
             var compressed = new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 16);
             var coords = pt.expand(compressed);
 
-            assert.equal(0, coords.x.compareTo(curve.base.x.value));
-            assert.equal(0, coords.y.compareTo(curve.base.y.value));
+            assert.equal(true, curve.base.equals(coords));
 
             var pt = curve.point(compressed);
-
             assert.equal(true, pt.equals(curve.base));
         })
 
@@ -242,25 +240,24 @@ describe('Point', function() {
             var pt = curve.base;
             var compressed = pt.compress();
 
-            var expected = new Big("2a29ef207d0e9b6c55cd260b306c7e007ac491ca1b10c62334a9e8dcd8d20fb6", 16);
+            var expected = new Field("2a29ef207d0e9b6c55cd260b306c7e007ac491ca1b10c62334a9e8dcd8d20fb6", 'hex', curve);
 
-            assert.equal(0, compressed.compareTo(expected));
+            assert.equal(compressed.equals(expected), true);
         })
     })
 })
 
 describe('Sign', function() {
-    var priv_d = new Big('2A45EAFE4CD469F811737780C57253360FBCC58E134C9A1FDCD10B0E4529A143', 16),
+    var curve = jk.std_curve('DSTU_PB_257'),
+    priv_d = new Big('2A45EAFE4CD469F811737780C57253360FBCC58E134C9A1FDCD10B0E4529A143', 16),
         hash_v = new Big('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 16),
         hash_b = new Buffer('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 'hex'),
         rand_e = new Big('7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB', 16),
         sig_s = new Big('0CCC6816453A903A1B641DF999011177DF420D21A72236D798532AEF42E224AB', 16),
         sig_r = new Big('491FA1EF75EAEF75E1F20CF3918993AB37E06005EA8E204BC009A1FA61BB0FB2', 16),
-        pub_x = new Big('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 16),
-        pub_y = new Big('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 16),
-        curve;
+        pub_x = new Field('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 'hex', curve),
+        pub_y = new Field('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 'hex', curve);
 
-    curve = jk.std_curve('DSTU_PB_257');
 
     describe("#help_sign", function() {
         it("should sign long binary value with privkey and provided E", function() {
@@ -287,8 +284,8 @@ describe('Sign', function() {
                 pub = priv.pub(),
                 sig, ok;
 
-            assert.equal(pub.x.value.compareTo(pub_x), 0);
-            assert.equal(pub.y.value.compareTo(pub_y), 0);
+            assert.equal(pub.x.equals(pub_x), true);
+            assert.equal(pub.y.equals(pub_y), true);
 
             sig = priv.help_sign(hash_v, rand_e);
             ok = pub.help_verify(hash_v, sig.s, sig.r);
@@ -302,7 +299,7 @@ describe('Broken', function() {
     var curve = jk.std_curve('DSTU_PB_257');
 
     describe("#expand()", function() {
-        it("should compute coordinates from compressed point", function() {
+        it("should compute coordinates from specific point", function() {
             var compressed = new Big("76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b419", 16);
             var pt = curve.point(ZERO, ZERO);
 
@@ -310,9 +307,9 @@ describe('Broken', function() {
 
             var px = new Big('76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b418', 16);
             var py = new Big('12b20103548f45dcbed5486022dfcb244b2d996e0d3d761abaf73ba16ea26e0d3', 16);
+            var expect_pt = curve.point(px, py);
 
-            assert.equal(0, coords.x.compareTo(px));
-            assert.equal(0, coords.y.compareTo(py));
+            assert.equal(true, expect_pt.equals(coords));
         })
     })
 
