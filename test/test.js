@@ -21,7 +21,10 @@ try {
         getRandomValues: function (buf) {
             var i;
             for(i=0; i < buf.length; i++) {
-                buf[i] = Math.random() * 32;
+                buf[i] = Math.random() * 255;
+                buf[i] |= (Math.random() * 255) << 8;
+                buf[i] |= (Math.random() * 255) << 16;
+                buf[i] |= (Math.random() * 255) << 24;
             }
 
             return buf;
@@ -44,18 +47,18 @@ describe('Curve', function() {
         it('should compute curve modulus', function() {
             var curve = jk.std_curve('DSTU_PB_257'),
                 mod_hex = "20000000000000000000000000000000000000000000000000000000000001001",
-                mod = new Big(mod_hex, 16),
+                mod = new Field(mod_hex, 'hex', curve),
                 modulus;
 
             modulus = curve.comp_modulus(257, [12, 0]);
-            assert.equal(0, mod.compareTo(modulus));
-            assert.equal(258, curve.modulus.bitLength());
+            assert.equal(mod.equals(modulus), true);
+            assert.equal(curve.modulus.bitLength(), 258);
         })
 
         it('should not change modulus value on curve', function() {
             var curve = jk.std_curve('DSTU_PB_257'),
                 mod_hex = "20000000000000000000000000000000000000000000000000000000000001003",
-                mod = new Big(mod_hex, 16),
+                mod = new Field(mod_hex, 'hex', curve),
                 mod_before,
                 modulus;
 
@@ -64,8 +67,8 @@ describe('Curve', function() {
 
             assert.equal(true, mod.equals(modulus));
             assert.equal(258, curve.modulus.bitLength());
-            assert.equal(true, mod_before.equals(curve.modulus));
-            assert.equal(false, mod.equals(curve.modulus));
+            assert.equal(mod_before.equals(curve.modulus), true);
+            assert.equal(mod.equals(curve.modulus), false);
 
         })
     })
@@ -139,6 +142,16 @@ describe("Field", function() {
             assert.equal(true, value_r.equals(expect_r));
         })
     })
+
+    describe('#shiftRightM', function (bits) {
+        it("should bitshift big integer rightwise inplace", function () {
+            var initial = new Field('7a32849e569c8888f25de6f69a839d75057383f473acf559abd3c5d683294ceb', 'hex', curve);
+            var expect = new Field('3d19424f2b4e4444792ef37b4d41ceba82b9c1fa39d67aacd5e9e2eb4194a67', 'hex', curve);
+            initial.shiftRightM(5);
+
+            assert.equal(initial.equals(expect), true);
+        })
+    })
 })
 
 describe('Point', function() {
@@ -150,9 +163,9 @@ describe('Point', function() {
 
     describe("#add", function() {
         it("should produce specific point", function() {
-            var rand_e = new Big(RAND_E_HEX, 16),
-                pub_x = new Big(PUB_X_HEX, 16),
-                pub_y = new Big(PUB_Y_HEX, 16),
+            var rand_e = new Field(RAND_E_HEX, 'hex', curve),
+                pub_x = new Field(PUB_X_HEX, 'hex', curve),
+                pub_y = new Field(PUB_Y_HEX, 'hex', curve),
                 pp_x = new Field('176dbde19773dfd335665597e8d6a0ab678721a5bb7030f25dc4c48b809ef3520', 'hex', curve),
                 pp_y = new Field('6e75301556ea5d571403086691030f024c026907c8e818b2eedd9184d12040ee', 'hex', curve),
                 pub_q, pub_2q;
@@ -162,17 +175,14 @@ describe('Point', function() {
 
                 assert.equal(pub_2q.x.equals(pp_x), true);
                 assert.equal(pub_2q.y.equals(pp_y), true)
-
-                console.log("cnt " + gf2m.get_cnt());
-                console.log("icnt " + gf2m.get_icnt());
         })
     })
 
     describe("#mul", function() {
         it("should produce specific point", function() {
             var rand_e = new Field(RAND_E_HEX, 'hex', curve),
-                pub_x = new Big(PUB_X_HEX, 16),
-                pub_y = new Big(PUB_Y_HEX, 16),
+                pub_x = new Field(PUB_X_HEX, 'hex', curve),
+                pub_y = new Field(PUB_Y_HEX, 'hex', curve),
                 pp_x = new Field('f26df77ca4c807c6b94f5c577415a1fce603a85ae7678717e16cb9a78de32d15', 'hex', curve),
                 pp_y = new Field('1785fded2804bea15b02c4fd785fd3e98ab2435b8d78da44e195a9a088d3fc2d4', 'hex', curve),
                 pub_q, point;
@@ -182,20 +192,16 @@ describe('Point', function() {
 
                 assert.equal(point.x.equals(pp_x), true);
                 assert.equal(point.y.equals(pp_y), true);
-
-                console.log("cnt " + gf2m.get_cnt());
-                console.log("icnt " + gf2m.get_icnt());
-
         })
     })
 
     describe("#trace()", function() {
         it("should compute field trace", function() {
             var value_hex = '2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6';
-            var value = new Big(value_hex, 16);
-            var trace = curve.trace(value);
+            var value = new Field(value_hex, 'hex', curve);
+            var trace = value.trace();
 
-            assert.equal(1, trace);
+            assert.equal(trace, 1);
         })
     })
 
@@ -215,23 +221,23 @@ describe('Point', function() {
         })
 
         it("should check tax office pubkey decompression", function() {
-            var compressed = new Big("01A77131A7C14F9AA6EA8C760D39673D5F0330FAB1118D55B55B7AF0735975485F", 16);
+            var compressed = new Field("01A77131A7C14F9AA6EA8C760D39673D5F0330FAB1118D55B55B7AF0735975485F", 'hex', curve);
             var pt = curve.point(compressed);
             var expect_pt = curve.point(
-                new Big("01A77131A7C14F9AA6EA8C760D39673D5F0330FAB1118D55B55B7AF0735975485F", 16),
-                new Big("DC058ADA665D99084038B5F914FB9CF7214760A4865B49CAF7F4BE7379F3A395", 16)
+                new Field("01A77131A7C14F9AA6EA8C760D39673D5F0330FAB1118D55B55B7AF0735975485F", 'hex', curve),
+                new Field("DC058ADA665D99084038B5F914FB9CF7214760A4865B49CAF7F4BE7379F3A395", 'hex', curve)
             );
 
-            assert.equal(true, pt.equals(expect_pt));
+            assert.equal(pt.equals(expect_pt), true);
 
-            compressed = new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 16);
+            compressed = new Field("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 'hex', curve);
             var pt = curve.point(compressed);
             var expect_pt = curve.point(
-                new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7", 16),
-                new Big("010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF", 16)
+                new Field("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB7", 'hex', curve),
+                new Field("010686D41FF744D4449FCCF6D8EEA03102E6812C93A9D60B978B702CF156D814EF", 'hex', curve) 
             );
 
-            assert.equal(true, pt.equals(expect_pt));
+            assert.equal(pt.equals(expect_pt), true);
         })
     })
 
@@ -249,12 +255,12 @@ describe('Point', function() {
 
 describe('Sign', function() {
     var curve = jk.std_curve('DSTU_PB_257'),
-    priv_d = new Big('2A45EAFE4CD469F811737780C57253360FBCC58E134C9A1FDCD10B0E4529A143', 16),
-        hash_v = new Big('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 16),
+    priv_d = new Field('2A45EAFE4CD469F811737780C57253360FBCC58E134C9A1FDCD10B0E4529A143', 'hex', curve),
+        hash_v = new Field('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 'hex', curve),
         hash_b = new Buffer('6845214B63288A832A772E1FE6CB6C7D3528569E29A8B3584370FDC65F474242', 'hex'),
-        rand_e = new Big('7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB', 16),
-        sig_s = new Big('0CCC6816453A903A1B641DF999011177DF420D21A72236D798532AEF42E224AB', 16),
-        sig_r = new Big('491FA1EF75EAEF75E1F20CF3918993AB37E06005EA8E204BC009A1FA61BB0FB2', 16),
+        rand_e = new Field('7A32849E569C8888F25DE6F69A839D75057383F473ACF559ABD3C5D683294CEB', 'hex', curve),
+        sig_s = new Field('0CCC6816453A903A1B641DF999011177DF420D21A72236D798532AEF42E224AB', 'hex', curve),
+        sig_r = new Field('491FA1EF75EAEF75E1F20CF3918993AB37E06005EA8E204BC009A1FA61BB0FB2', 'hex', curve),
         pub_x = new Field('00AFF3EE09CB429284985849E20DE5742E194AA631490F62BA88702505629A6589', 'hex', curve),
         pub_y = new Field('01B345BC134F27DA251EDFAE97B3F306B4E8B8CB9CF86D8651E4FB301EF8E1239C', 'hex', curve);
 
