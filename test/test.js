@@ -39,6 +39,7 @@ var assert = require("assert"),
     Big = jk.Big,
     Field = jk.Field,
     Priv = jk.Priv,
+    Pub = jk.Pub,
     ZERO = new Big("0");
 
 
@@ -293,6 +294,17 @@ describe('Sign', function() {
         });
     })
 
+    describe('#verify', function () {
+        var sign_hex = '044091d08086a623d7fc292418636f634e82e52f8f989d423dae6c64878699cc2f11d0332bfe45c237421a41c2eb99e230f2629881c8e0c90be88610880e8c269d23';
+        it("should parse asn1 signature", function() {
+            var priv = new Priv(curve, priv_d),
+                pub = priv.pub();
+
+            ok = pub.verify(hash_b, new Buffer(sign_hex, 'hex'), 'short');
+            assert.equal(ok, true);
+        });
+    });
+
     describe("#pub", function() {
         it("should return pubkey from priv", function() {
             var priv = new Priv(curve, priv_d),
@@ -321,6 +333,24 @@ describe('Sign', function() {
             asign = Priv.sign_serialise(sign, 'short');
 
             assert.equal(asign.toString('hex'), hex);
+
+        });
+    });
+
+    describe('parse_sign()', function() {
+        it("Should parse asn1 string to {s, r} object", function() {
+            var asign, sign;
+
+            var hex = '0440b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f49ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c';
+
+            sign = {
+                s: new Big('ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab', 16),
+                r: new Big('491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2', 16)
+            };
+            asign = Pub.parse_sign(new Buffer(hex, 'hex'), 'short', curve);
+
+            assert.equal(asign.s.toString(true), sign.s.toString(16));
+            assert.equal(asign.r.toString(true), sign.r.toString(16));
 
         });
     });
