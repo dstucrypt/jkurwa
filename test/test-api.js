@@ -31,7 +31,7 @@ describe('API', function () {
     describe('pubkey()', function () {
 
         it('should create private key from hex string', function () {
-            var pub = new jk.Pub(curve, curve.point(new jk.Big('e54bf3f92a281d02f46ad5637387a8f13c9698816cb4f8beadfc0565fa63d6b1', 16)));
+            var pub = new jk.Pub(curve, curve.point('e54bf3f92a281d02f46ad5637387a8f13c9698816cb4f8beadfc0565fa63d6b1'));
 
             assert.equal(pub.type, 'Pub');
             assert.equal(pub.point.x.equals(expect_pubx), true);

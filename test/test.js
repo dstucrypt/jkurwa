@@ -36,11 +36,9 @@ var assert = require("assert"),
     jk = require('../lib/index.js'),
     gf2m = require('../lib/gf2m.js'),
     Curve = jk.Curve,
-    Big = jk.Big,
     Field = jk.Field,
     Priv = jk.Priv,
-    Pub = jk.Pub,
-    ZERO = new Big("0");
+    Pub = jk.Pub;
 
 
 describe('Curve', function() {
@@ -208,16 +206,14 @@ describe('Point', function() {
 
     describe("#expand()", function() {
         it("should compute coordinates from compressed point", function() {
-            var pt = curve.point(ZERO, ZERO);
-            var coords = pt.expand(ZERO);
+            var coords = curve.expand(new Field([0], 'buf8', curve));
             assert.equal(coords.x.is_zero(), true);
 
-            var compressed = new Big("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6", 16);
-            var coords = pt.expand(compressed);
+            var coords = curve.expand("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6");
 
             assert.equal(true, curve.base.equals(coords));
 
-            var pt = curve.point(compressed);
+            var pt = curve.point("2A29EF207D0E9B6C55CD260B306C7E007AC491CA1B10C62334A9E8DCD8D20FB6");
             assert.equal(true, pt.equals(curve.base));
         })
 
@@ -271,8 +267,8 @@ describe('Sign', function() {
             var priv = new Priv(curve, priv_d), sig;
             sig = priv.help_sign(hash_v, rand_e);
 
-            assert.equal(sig.s.toString(16), 'ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab')
-            assert.equal(sig.r.toString(16), '491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2');
+            assert.equal(sig.s.toString(true), 'ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab')
+            assert.equal(sig.r.toString(true), '491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2');
         })
     })
 
@@ -288,9 +284,9 @@ describe('Sign', function() {
             var priv = new Priv(curve, priv_d), sig;
             sig = priv.sign(hash_b, 'short');
 
-            assert.equal(sig.length, 66);
+            assert.equal(sig.length, 74);
             assert.equal(sig[0], 4);
-            assert.equal(sig[1], 64);
+            assert.equal(sig[1], 72);
         });
     })
 
@@ -324,11 +320,11 @@ describe('Sign', function() {
         it("Should return asn1 string", function () {
             var asign, sign;
 
-            var hex = '0440b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f49ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c';
+            var hex = '0448b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f4900000000ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c00000000';
 
             sign = {
-                s: new Big('ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab', 16),
-                r: new Big('491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2', 16)
+                s: new Field('ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab', 'hex', curve),
+                r: new Field('491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2', 'hex', curve)
             };
             asign = Priv.sign_serialise(sign, 'short');
 
@@ -344,13 +340,13 @@ describe('Sign', function() {
             var hex = '0440b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f49ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c';
 
             sign = {
-                s: new Big('ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab', 16),
-                r: new Big('491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2', 16)
+                s: 'ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab',
+                r: '491fa1ef75eaef75e1f20cf3918993ab37e06005ea8e204bc009a1fa61bb0fb2'
             };
             asign = Pub.parse_sign(new Buffer(hex, 'hex'), 'short', curve);
 
-            assert.equal(asign.s.toString(true), sign.s.toString(16));
-            assert.equal(asign.r.toString(true), sign.r.toString(16));
+            assert.equal(asign.s.toString(true), sign.s);
+            assert.equal(asign.r.toString(true), sign.r);
 
         });
     });
@@ -362,13 +358,12 @@ describe('Broken', function() {
 
     describe("#expand()", function() {
         it("should compute coordinates from specific point", function() {
-            var compressed = new Big("76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b419", 16);
-            var pt = curve.point(ZERO, ZERO);
+            var compressed = new Field("76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b419", 'hex', curve);
 
-            var coords = pt.expand(compressed);
+            var coords = curve.expand(compressed);
 
-            var px = new Big('76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b418', 16);
-            var py = new Big('12b20103548f45dcbed5486022dfcb244b2d996e0d3d761abaf73ba16ea26e0d3', 16);
+            var px = new Field('76cd4555ad63455529755e5c3f3066c3bcb957cc63d00e22c6dd1e9ed316b418', 'hex', curve);
+            var py = new Field('12b20103548f45dcbed5486022dfcb244b2d996e0d3d761abaf73ba16ea26e0d3', 'hex', curve);
             var expect_pt = curve.point(px, py);
 
             assert.equal(true, expect_pt.equals(coords));
