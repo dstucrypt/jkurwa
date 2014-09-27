@@ -44,4 +44,11 @@ describe('API', function () {
 
         });
     });
+
+    describe('curve_id()', function () {
+        it('should return curve id as defined in z1399-12', function () {
+            assert.equal(curve.curve_id(), 6);
+            assert.equal(jk.std_curve('DSTU_PB_431').curve_id(), 9);
+        });
+    })
 });
