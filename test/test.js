@@ -284,9 +284,9 @@ describe('Sign', function() {
             var priv = new Priv(curve, priv_d), sig;
             sig = priv.sign(hash_b, 'short');
 
-            assert.equal(sig.length, 74);
+            assert.equal(sig.length, 66);
             assert.equal(sig[0], 4);
-            assert.equal(sig[1], 72);
+            assert.equal(sig[1], 64);
         });
     })
 
