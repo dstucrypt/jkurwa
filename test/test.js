@@ -320,7 +320,7 @@ describe('Sign', function() {
         it("Should return asn1 string", function () {
             var asign, sign;
 
-            var hex = '0448b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f4900000000ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c00000000';
+            var hex = '0440b20fbb61faa109c04b208eea0560e037ab938991f30cf2e175efea75efa11f49ab24e242ef2a5398d73622a7210d42df77110199f91d641b3a903a451668cc0c';
 
             sign = {
                 s: new Field('ccc6816453a903a1b641df999011177df420d21a72236d798532aef42e224ab', 'hex', curve),
