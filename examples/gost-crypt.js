@@ -1,5 +1,5 @@
 var jk = require('../lib/index.js'),
-    em_gost = require('em-gost');
+    gost89 = require('gost89');
 
 /*
    Data encryption with DSTU 4145 and GOST block cipher.
@@ -32,11 +32,11 @@ iv = new Buffer('09100509181c0515', 'hex');
 cek = new Buffer('11080811020a0d0913040f020111190b04060c101d1c0a0911060e160b121419', 'hex');
 
 // compute sharedkey and wrap encryption key
-sharedkey = sender_priv.sharedKey(reciever_pub, ukm, em_gost.gost_kdf);
-wcek = em_gost.gost_keywrap(sharedkey, cek, iv);
+sharedkey = sender_priv.sharedKey(reciever_pub, ukm, gost89.gosthash);
+wcek = gost89.wrap_key(cek, sharedkey, iv);
 
 // finally encrypt text
-ciphered = em_gost.gost_encrypt_cfb(text, cek, iv);
+ciphered = gost89.compat.gost_encrypt_cfb(text, cek, iv);
 
 console.log("sender should transmit following infomration to reciever: ");
 console.log("    wrapped key    : " + wcek.toString("hex"));
