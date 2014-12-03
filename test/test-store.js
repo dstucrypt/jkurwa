@@ -67,13 +67,18 @@ describe('Keycoder', function () {
 
         it("should parse raw key in PEM format", function () {
             var der = keycoder.maybe_pem(PEM_KEY2),
-                store = keycoder.parse(der);
+                store = keycoder.parse(der),
+                key;
 
             assert.equal(store.format, 'privkeys')
             check_257(store.keys[0]);
             check_431(store.keys[1]);
 
-            store = jk.Priv.from_asn1(der);
+            key = jk.Priv.from_asn1(der);
+            assert.equal(key.type, 'Priv')
+            check_257(key);
+
+            store = jk.Priv.from_asn1(der, true);
             assert.equal(store.format, 'privkeys')
             check_257(store.keys[0]);
             check_431(store.keys[1]);
