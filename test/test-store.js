@@ -38,8 +38,7 @@ var PEM_KEY2 = '-----BEGIN PRIVATE KEY-----\n' +
 '-----END PRIVATE KEY-----' ;
 
 describe('Keycoder', function () {
-    var keycoder = new jk.Keycoder(),
-        b257 = jk.std_curve('DSTU_PB_257'),
+    var b257 = jk.std_curve('DSTU_PB_257'),
         b431 = jk.std_curve('DSTU_PB_431');
 
     var check_257 = function (key) {
@@ -60,26 +59,24 @@ describe('Keycoder', function () {
 
     describe('#parse()', function() {
         it("should parse encrypted key in PEM format", function () {
-            var der = keycoder.maybe_pem(PEM_KEY),
-                key_store = keycoder.parse(der);
+            var key_store = jk.guess_parse(PEM_KEY);
             assert.equal(key_store.format, 'PBES2');
         });
 
         it("should parse raw key in PEM format", function () {
-            var der = keycoder.maybe_pem(PEM_KEY2),
-                store = keycoder.parse(der),
+            var store = jk.guess_parse(PEM_KEY2),
                 key;
 
-            assert.equal(store.format, 'privkeys')
+            assert.equal(store.format, 'privkeys');
             check_257(store.keys[0]);
             check_431(store.keys[1]);
 
-            key = jk.Priv.from_asn1(der);
-            assert.equal(key.type, 'Priv')
+            key = jk.Priv.from_pem(PEM_KEY2);
+            assert.equal(key.type, 'Priv');
             check_257(key);
 
-            store = jk.Priv.from_asn1(der, true);
-            assert.equal(store.format, 'privkeys')
+            store = jk.Priv.from_pem(PEM_KEY2, true);
+            assert.equal(store.format, 'privkeys');
             check_257(store.keys[0]);
             check_431(store.keys[1]);
         })
