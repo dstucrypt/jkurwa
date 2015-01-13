@@ -21,3 +21,8 @@ See ./test/ and ./examples/ directories.
 Sister libary: https://github.com/muromec/ukurwa4145 (DSTU 4145 in Python).
 
 Demo site: http://dstu.enodev.org/
+
+Bonus
+---
+
+First known use of the word Kurwa was recorded in 1415. Happy 600 birthday Kurwa!
