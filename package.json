@@ -1,6 +1,6 @@
 {
   "name": "jkurwa",
-  "version": "0.4.17",
+  "version": "0.4.18",
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
   "main": "lib/index.js",
   "scripts": {
