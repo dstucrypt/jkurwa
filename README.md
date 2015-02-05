@@ -41,6 +41,12 @@ Sister libraries:
 Demo site: http://eusign.org/doc
 
 Demo apps: https://github.com/dstucrypt/agent, https://github.com/dstucrypt/dstukeys
+
+References
+----------
+
+* Certificate format (in Ukrainian), basically kind of X.509v3: http://zakon4.rada.gov.ua/laws/show/z1398-12
+
 Bonus
 ---
 
