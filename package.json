@@ -28,7 +28,6 @@
   "dependencies": {
     "asn1.js": ">= 0.4.0",
     "bn.js": ">= 0.14",
-    "xmldoc": "0.x",
     "js-lzma": "0.x"
   }
 }
