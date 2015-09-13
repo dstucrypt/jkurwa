@@ -8,7 +8,7 @@ var fs = require('fs'),
 var decrypt_buffer = function(u8, priv, cert) {
     var msg_wrap, msg, kek, cek, wcek, data;
     try {
-        data = new Buffer(u8, 'raw');
+        data = new Buffer(u8, 'binary');
         msg_wrap = new jk.models.Message(data);
     } catch(e) {
         console.log('e', e);
