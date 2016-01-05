@@ -40,12 +40,17 @@ Sister libraries:
 
 Demo site: http://eusign.org/doc
 
-Demo apps: https://github.com/dstucrypt/agent, https://github.com/dstucrypt/dstukeys
+Demo apps:
+
+* https://github.com/dstucrypt/agent -- command line utility to sign, encrypt and decrypt tax reports
+* https://github.com/dstucrypt/dstukeys -- web interface with examples of authentication
 
 References
 ----------
 
 * Certificate format (in Ukrainian), basically kind of X.509v3: http://zakon4.rada.gov.ua/laws/show/z1398-12
+* Private key container format, PBES2-like (effective from 01.01.2016): http://zakon3.rada.gov.ua/laws/show/z2227-13
+* See https://github.com/dstucrypt/agent repo for tax report format and implementation details
 
 Bonus
 ---
