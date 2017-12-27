@@ -37,10 +37,10 @@ function main() {
         path: parsed.path,
         headers: {
             'Content-Type': 'application/ocsp-request',
+            'Content-Length': ocsp.length,
         },
         method: 'POST'
     }, function (res) {
-        console.log('res', res.statusCode);
         var chunks = [];
         res.on('data', function (chunk) {
             chunks.push(chunk);
