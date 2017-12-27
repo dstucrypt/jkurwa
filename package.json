@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:muromec/jkurwa"
+    "url": "git@github.com:dstucrypt/jkurwa"
   },
   "keywords": [
     "ecc",
@@ -19,9 +19,9 @@
   "author": "Ilya Petrov",
   "license": "BSD",
   "bugs": {
-    "url": "https://github.com/muromec/jkurwa/issues"
+    "url": "https://github.com/dstucrypt/jkurwa/issues"
   },
-  "homepage": "https://github.com/muromec/jkurwa/",
+  "homepage": "https://github.com/dstucrypt/jkurwa/",
   "devDependencies": {
     "mocha": "~1.14.0"
   },
