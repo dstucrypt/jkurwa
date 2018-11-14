@@ -1,3 +1,2 @@
-
 ignore:
-    - "test/test*.js"
+    - "test/*"
