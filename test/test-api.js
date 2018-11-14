@@ -51,4 +51,20 @@ describe('API', function () {
             assert.equal(jk.std_curve('DSTU_PB_431').curve_id(), 9);
         });
     })
+
+    describe('std_curve()', function () {
+        it('should known standard curve PB 257', function () {
+            jk.std_curve('DSTU_PB_257');
+        });
+
+        it('should known standard curve PB 431', function () {
+            jk.std_curve('DSTU_PB_257');
+        });
+
+        it('should throw when unknown curve is asked for', function () {
+            assert.throws(function () {
+                jk.std_curve('DSTU_PB_255');
+            }, Error, 'Curve with such name was not defined');
+        });
+    });
 });
