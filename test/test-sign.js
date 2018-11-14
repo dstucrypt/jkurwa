@@ -32,8 +32,8 @@ describe('Signed Message', function () {
     var data = Buffer.from('123');
     var algo = gost89.compat.algos();
     var dataHash = algo.hash(data);
-    var sign = Buffer.from('77ee7c58f828f2d8240736b59d786558b693e26221e6a696856c85567a7e9263d72d7380c37533ed81c1d19f00f0bc4a03cb6c309d8053baf9eba2caa243ec1d', 'hex');
-    var time = 1542236305;
+    var sign = Buffer.from('e45fe541d047ae546825f91db53906306024ad12fcbe8185b9fce2e615e52b2084dad217d37612ee8761da493db0c4570ac5d323c649b1c83093897536b23a5b', 'hex');
+    var time = 1540236305;
 
     var cert = jk.Certificate.from_asn1(
         fs.readFileSync(__dirname + '/data/SFS_1.cer')
@@ -51,6 +51,7 @@ describe('Signed Message', function () {
         assert.equal(message.wrap.content.contentInfo.content, data);
         var [signInfo] = message.wrap.content.signerInfos;
         assert.deepEqual(signInfo.encryptedDigest, sign);
+        assert.equal(time * 1000, message.pattrs.signingTime);
     });
 
     it('should sign hash using privkey', function() {
@@ -93,6 +94,44 @@ describe('Signed Message', function () {
         var [signCert] = message.wrap.content.certificate;
         assert.deepEqual(new jk.Certificate(signCert).as_dict(), cert.as_dict());
         assert.equal(time * 1000, message.pattrs.signingTime);
+    });
+
+    it('should check digest and signing time against certificate validity range', function () {
+        var message = new Message(
+            fs.readFileSync(__dirname + '/data/message.p7')
+        );
+        assert.equal(message.verifyAttrs(algo.hash), true);
+    });
+
+    it('should fail attribute check if time is not specified (expired cert)', function() {
+        var message = new Message({
+            type: 'signedData',
+            cert: cert,
+            data: data,
+            hash: algo.hash,
+            signer: key1,
+        });
+        assert.equal(message.verifyAttrs(algo.hash), false);
+    });
+
+    it('should fail attribute check if data does not match digest', function() {
+        var message = new Message({
+            type: 'signedData',
+            cert: cert,
+            data: data,
+            dataHash: Buffer.from('12345678901234567890123456789098'),
+            hash: algo.hash,
+            signTime: time,
+            signer: key1,
+        });
+        assert.equal(message.verifyAttrs(algo.hash), false);
+    });
+
+    it('should fail verification (pubkey does not match certificate)', function () {
+        var message = new Message(
+            fs.readFileSync(__dirname + '/data/message.p7')
+        );
+        assert.equal(message.verify(algo.hash), false);
     });
 
 });
