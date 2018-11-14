@@ -32,14 +32,14 @@ describe('Signed Message', function () {
     var data = Buffer.from('123');
     var algo = gost89.compat.algos();
     var dataHash = algo.hash(data);
-    var sign = Buffer.from('b4f2a096a0612b72c23908f409a72b120624de995d2e4993300e51fe13b09b271e00eaa92db5abe022a5e69578223e9ff6515cb349537d3e55dc38771c92ca34', 'hex');
-    var time = new Date(1542236305800);
+    var sign = Buffer.from('77ee7c58f828f2d8240736b59d786558b693e26221e6a696856c85567a7e9263d72d7380c37533ed81c1d19f00f0bc4a03cb6c309d8053baf9eba2caa243ec1d', 'hex');
+    var time = 1542236305;
 
     var cert = jk.Certificate.from_asn1(
         fs.readFileSync(__dirname + '/data/SFS_1.cer')
     );
 
-    it('Message should sign data using privkey', ()=> {
+    it('should sign data using privkey', function() {
         var message = new Message({
             type: 'signedData',
             cert: cert,
@@ -53,7 +53,7 @@ describe('Signed Message', function () {
         assert.deepEqual(signInfo.encryptedDigest, sign);
     });
 
-    it('Message should sign hash using privkey', ()=> {
+    it('should sign hash using privkey', function() {
         var message = new Message({
             type: 'signedData',
             cert: cert,
@@ -67,7 +67,7 @@ describe('Signed Message', function () {
         assert.deepEqual(signInfo.encryptedDigest, sign);
     });
 
-    it('Message should make asn1 buffer', ()=> {
+    it('should make asn1 buffer', function() {
         var message = new Message({
             type: 'signedData',
             cert: cert,
@@ -76,13 +76,23 @@ describe('Signed Message', function () {
             signTime: time,
             signer: key1,
         });
+
         assert.deepEqual(
             message.as_asn1(),
-            Buffer.from(
-                fs.readFileSync(__dirname + '/data/message.hex').toString(),
-                'hex'
-            )
+            fs.readFileSync(__dirname + '/data/message.p7')
         );
+    });
+
+    it('should parse message from asn1 buffer', function() {
+        var message = new Message(
+            fs.readFileSync(__dirname + '/data/message.p7')
+        );
+        var [signInfo] = message.wrap.content.signerInfos;
+        assert.deepEqual(signInfo.encryptedDigest, sign);
+        assert.deepEqual(message.wrap.content.contentInfo.content, data);
+        var [signCert] = message.wrap.content.certificate;
+        assert.deepEqual(new jk.Certificate(signCert).as_dict(), cert.as_dict());
+        assert.equal(time * 1000, message.pattrs.signingTime);
     });
 
 });
