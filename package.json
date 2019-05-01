@@ -44,6 +44,9 @@
     "js-lzma": "0.x"
   },
   "eslintConfig": {
-    "extends": ["airbnb", "prettier"]
+    "extends": [
+      "airbnb",
+      "prettier"
+    ]
   }
 }
