@@ -3,6 +3,22 @@ const assert = require("assert");
 const fs = require("fs");
 const jk = require("../lib/index.js");
 
+function repeate(str, times) {
+  let ret = ''
+  let left = times;
+  while (left > 0) {
+    ret += str;
+    left -= 1;
+  }
+  return ret;
+}
+
+function encodeUtf8Str(input, encoder) {
+  const asn1 = require('asn1.js');
+  const UTF8STR = asn1.define('UTF8STR', function() {this.utf8str()});
+  return UTF8STR.encode(input, 'der');
+}
+
 describe("Certificate", () => {
   describe("parse sfs stamp", () => {
     const data = fs.readFileSync(`${__dirname}/data/SFS_1.cer`);
@@ -102,6 +118,22 @@ describe("Certificate", () => {
       assert.deepEqual(der, data);
     });
 
+    it("should serialize name to asn1", () => {
+      const der = cert.name_asn1();
+      assert.deepEqual(
+        der.toString('hex'),
+        data.slice(50, 336 + 4 + 50).toString('hex')
+      );
+    });
+
+    it("should serialize (bypass cache) back", () => {
+      const temp = jk.Certificate.from_asn1(data);
+      delete temp._raw;
+      const der = temp.to_asn1();
+      assert.deepEqual(der, data);
+    });
+
+
     it("should make issuer rdn", () => {
       const rdn = cert.rdnSerial();
       assert.deepEqual(
@@ -185,11 +217,34 @@ describe("Certificate", () => {
           "/localityName=Київ"
       );
     });
+
+    it("should make issuer rdn for really long orgname", () => {
+      const longName = repeate('ЦЗО!', 100);
+      const temp = jk.Certificate.from_asn1(data);
+      temp.ob.tbsCertificate.issuer.value[0][0].value =
+          encodeUtf8Str(longName, 'der');
+
+      const rdn = temp.rdnSerial();
+      assert.deepEqual(
+        rdn,
+        "3004751def2c78ae010000000100000061000000@" +
+          `organizationName=${longName}` +
+          "/organizationalUnitName=Адміністратор ІТС ЦЗО" +
+          "/commonName=Центральний засвідчувальний орган" +
+          "/serialNumber=UA-00015622-2012" +
+          "/countryName=UA" +
+          "/localityName=Київ"
+      );
+    });
+
   });
 
   describe("parse minjust ca (ecdsa)", () => {
     const data = fs.readFileSync(
       `${__dirname}/data/CA-Justice-ECDSA-261217.cer`
+    );
+    const pemData = fs.readFileSync(
+      `${__dirname}/data/CA-Justice-ECDSA-261217.pem`
     );
     const cert = jk.Certificate.from_asn1(data);
 
@@ -229,9 +284,19 @@ describe("Certificate", () => {
       assert.equal(cert.issuer.serialNumber, "UA-00015622-256");
     });
 
+    it("should parse certificate from PEM", () => {
+      const pemCert = jk.Certificate.from_pem(pemData);
+      assert.deepEqual(pemCert, cert);
+    });
+
     it("should serialize back", () => {
       const der = cert.to_asn1();
       assert.deepEqual(der, data);
+    });
+
+    it("should serialize to PEM", () => {
+      const pem = cert.to_pem();
+      assert.deepEqual(pem, pemData.toString().trim());
     });
 
     it("should make issuer rdn", () => {
