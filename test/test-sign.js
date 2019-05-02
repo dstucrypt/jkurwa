@@ -63,7 +63,7 @@ describe("Signed Message", () => {
     assert.deepEqual(signInfo.encryptedDigest, sign);
   });
 
-  it("should make asn1 buffer", () => {
+  it("should serialize to asn1 buffer", () => {
     const message = new Message({
       type: "signedData",
       cert,
@@ -75,6 +75,28 @@ describe("Signed Message", () => {
 
     assert.deepEqual(
       message.as_asn1(),
+      fs.readFileSync(`${__dirname}/data/message.p7`)
+    );
+  });
+
+  it("should serialize to transport format (tax office)", () => {
+    const message = new Message({
+      type: "signedData",
+      cert,
+      data,
+      hash: algo.hash,
+      signTime: time,
+      signer: key1
+    });
+
+    const transport = message.as_transport();
+    assert.equal(transport.length, 0x0b1f + 0xd);
+    assert.equal(
+      transport.slice(0, 13).toString("binary"),
+      "UA1_SIGN\0\x1F\x0B\x00\x00"
+    );
+    assert.deepEqual(
+      transport.slice(13),
       fs.readFileSync(`${__dirname}/data/message.p7`)
     );
   });
@@ -127,5 +149,78 @@ describe("Signed Message", () => {
       fs.readFileSync(`${__dirname}/data/message.p7`)
     );
     assert.equal(message.verify(algo.hash), false);
+  });
+
+  it("should encrypt and serialize message", () => {
+    const message = new Message({
+      type: "envelopedData",
+      data,
+      cert, // this certificate does not match private key
+      toCert: cert,
+      crypter: key1,
+      algo
+    });
+    assert.deepEqual(
+      message.as_asn1(),
+      fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+    );
+  });
+
+  it("should serialize encrypted message to transport format", () => {
+    const message = new Message({
+      type: "envelopedData",
+      data,
+      cert,
+      toCert: cert,
+      crypter: key1,
+      algo
+    });
+    const transport = message.as_transport();
+    assert.equal(transport.length, 0x0406 + 0xe);
+    assert.deepEqual(
+      transport.slice(0, 0xe).toString("binary"),
+      "UA1_CRYPT\0\x06\x04\0\0"
+    );
+    assert.deepEqual(
+      transport.slice(0xe),
+      fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+    );
+  });
+
+  it("should serialize encrypted message to transport format including cert", () => {
+    const message = new Message({
+      type: "envelopedData",
+      data,
+      cert,
+      toCert: cert,
+      crypter: key1,
+      algo
+    });
+    const transport = message.as_transport({}, cert);
+    assert.equal(transport.length, 0x0406 + 0xe + 0x6f2);
+    assert.deepEqual(
+      transport.slice(0, 0x13).toString("binary"),
+      "TRANSPORTABLE\0\x01\0\0\0\0"
+    );
+    assert.deepEqual(
+      transport.slice(0x13, 0x13 + 0xe).toString("binary"),
+      "CERTCRYPT\0\xD1\x06\0\0"
+    );
+
+    assert.equal(cert.to_asn1().length, 0x6d1);
+    assert.deepEqual(
+      transport.slice(0x13 + 0xe, 0x13 + 0xe + 0x6d1),
+      cert.to_asn1()
+    );
+    assert.deepEqual(
+      transport
+        .slice(0x13 + 0xe + 0x6d1, 0x13 + 0xe + 0x6d1 + 0xe)
+        .toString("binary"),
+      "UA1_CRYPT\0\x06\x04\0\0"
+    );
+    assert.deepEqual(
+      transport.slice(0x13 + 0xe + 0x6d1 + 0xe),
+      fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+    );
   });
 });
