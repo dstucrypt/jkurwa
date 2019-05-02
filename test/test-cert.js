@@ -1,25 +1,39 @@
 /* eslint-env mocha */
+/* eslint-disable no-underscore-dangle */
+const gost89 = require("gost89");
 const assert = require("assert");
 const fs = require("fs");
 const jk = require("../lib/index.js");
+const strutil = require("../lib/util/str");
 
-function repeate(str, times) {
-  let ret = ''
+/* eslint-disable no-global-assign, no-unused-expressions */
+const NOT_RANDOM_32 = Buffer.from("12345678901234567890123456789012");
+
+global.crypto = {
+  // Moch random only for testing purposes.
+  // SHOULD NOT BE USED IN REAL CODE.
+  getRandomValues() {
+    return NOT_RANDOM_32;
+  }
+};
+/* eslint-enable no-global-assign, no-unused-expressions */
+
+function repeate(inputStr, times) {
+  let ret = "";
   let left = times;
   while (left > 0) {
-    ret += str;
+    ret += inputStr;
     left -= 1;
   }
   return ret;
 }
 
-function encodeUtf8Str(input, encoder) {
-  const asn1 = require('asn1.js');
-  const UTF8STR = asn1.define('UTF8STR', function() {this.utf8str()});
-  return UTF8STR.encode(input, 'der');
+function u(input) {
+  return strutil.encodeUtf8Str(input, "der");
 }
 
 describe("Certificate", () => {
+  const algo = gost89.compat.algos();
   describe("parse sfs stamp", () => {
     const data = fs.readFileSync(`${__dirname}/data/SFS_1.cer`);
     const cert = jk.Certificate.from_asn1(data);
@@ -121,8 +135,8 @@ describe("Certificate", () => {
     it("should serialize name to asn1", () => {
       const der = cert.name_asn1();
       assert.deepEqual(
-        der.toString('hex'),
-        data.slice(50, 336 + 4 + 50).toString('hex')
+        der.toString("hex"),
+        data.slice(50, 336 + 4 + 50).toString("hex")
       );
     });
 
@@ -132,7 +146,6 @@ describe("Certificate", () => {
       const der = temp.to_asn1();
       assert.deepEqual(der, data);
     });
-
 
     it("should make issuer rdn", () => {
       const rdn = cert.rdnSerial();
@@ -219,10 +232,9 @@ describe("Certificate", () => {
     });
 
     it("should make issuer rdn for really long orgname", () => {
-      const longName = repeate('ЦЗО!', 100);
+      const longName = repeate("ЦЗО!", 100);
       const temp = jk.Certificate.from_asn1(data);
-      temp.ob.tbsCertificate.issuer.value[0][0].value =
-          encodeUtf8Str(longName, 'der');
+      temp.ob.tbsCertificate.issuer.value[0][0].value = u(longName);
 
       const rdn = temp.rdnSerial();
       assert.deepEqual(
@@ -236,7 +248,75 @@ describe("Certificate", () => {
           "/localityName=Київ"
       );
     });
+  });
 
+  describe("parse CZO root", () => {
+    const data = fs.readFileSync(`${__dirname}/data/CZOROOT.cer`);
+
+    it("should parse certificate", () => {
+      const cert = jk.Certificate.from_asn1(data);
+      assert.equal(cert.format, "x509");
+      assert.equal(cert.signatureAlgorithm, "Dstu4145le");
+      assert.equal(cert.subject.serialNumber, "UA-00015622-2012");
+      assert.deepEqual(cert.issuer, cert.subject);
+    });
+
+    it("should verify validity of self-signed root", () => {
+      const cert = jk.Certificate.from_asn1(data);
+      assert.equal(
+        cert.verifySelfSigned({
+          time: 1556798940000,
+          dstuHash: algo.hash
+        }),
+        true
+      );
+    });
+
+    it("should verify validity of self-signed root (fail if messed with)", () => {
+      const cert = jk.Certificate.from_asn1(data);
+      cert.ob.tbsCertificate.issuer.value[0][0].value = Buffer.from("123");
+      assert.equal(
+        cert.verifySelfSigned({
+          time: 1556798940000,
+          dstuHash: algo.hash
+        }),
+        false
+      );
+    });
+
+    it("should verify validity of self-signed root (fail if algo doesnt match)", () => {
+      const cert = jk.Certificate.from_asn1(data);
+      cert.signatureAlgorithm = "ECDSA";
+      assert.equal(
+        cert.verifySelfSigned({
+          time: 1556798940000,
+          dstuHash: algo.hash
+        }),
+        false
+      );
+    });
+
+    it("should verify validity of self-signed root (fail if expired)", () => {
+      const cert = jk.Certificate.from_asn1(data);
+      assert.equal(
+        cert.verifySelfSigned({
+          time: 1700000000000,
+          dstuHash: algo.hash
+        }),
+        false
+      );
+    });
+
+    it("should verify validity of self-signed root (fail if not active yet)", () => {
+      const cert = jk.Certificate.from_asn1(data);
+      assert.equal(
+        cert.verifySelfSigned({
+          time: 1300000000000,
+          dstuHash: algo.hash
+        }),
+        false
+      );
+    });
   });
 
   describe("parse minjust ca (ecdsa)", () => {
@@ -311,6 +391,49 @@ describe("Certificate", () => {
           "/countryName=UA" +
           "/localityName=Kyiv" +
           "/organizationIdentifier=NTRUA-00015622"
+      );
+    });
+  });
+
+  describe("Generated Cert", () => {
+    const curve = jk.std_curve("DSTU_PB_257");
+    const priv = curve.keygen();
+
+    it("should generate and self-sign a cert", () => {
+      const name = {
+        organizationName: "Very Much CA",
+        serialNumber: "UA-99999999",
+        localityName: "Wakanda"
+      };
+      const serial = 14799991119 << 12; // eslint-disable-line no-bitwise
+      const cert = jk.Certificate.signCert({
+        privkey: priv,
+        algorithm: "Dstu4145le", // TODO: should be in privkey
+        curve: "DSTU_PB_257", // TODO: should be in privkey
+        hash: algo.hash,
+
+        certData: {
+          serial,
+          issuer: name,
+          subject: name,
+          valid: { from: 1500000000000, to: 1700000000000 },
+          usage: "\x03\x02\x01\x06"
+        }
+      });
+      const data = cert.as_asn1();
+      assert.deepEqual(
+        fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`),
+        data
+      );
+    });
+
+    it("should check that self-signed cert is valid", () => {
+      const data = fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`);
+      const cert = jk.Certificate.from_asn1(data);
+
+      assert.equal(
+        cert.verifySelfSigned({ time: 1550000000000, dstuHash: algo.hash }),
+        true
       );
     });
   });
