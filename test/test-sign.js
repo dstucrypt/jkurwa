@@ -89,6 +89,31 @@ describe("Signed Message", () => {
       signer: key1
     });
 
+    const transport = message.as_transport({
+        EDRPOU: '1234567891',
+        RCV_EMAIL: 'user@tax.mail.com',
+        DOC_TYPE: '3',
+    });
+    assert.equal(
+      transport.slice(0, 14).toString("binary"),
+      "TRANSPORTABLE\0"
+    );
+    assert.deepEqual(
+      transport,
+      fs.readFileSync(`${__dirname}/data/message.transport`)
+    );
+  });
+
+  it("should serialize to transport format with headers (tax office)", () => {
+    const message = new Message({
+      type: "signedData",
+      cert,
+      data,
+      hash: algo.hash,
+      signTime: time,
+      signer: key1
+    });
+
     const transport = message.as_transport();
     assert.equal(transport.length, 0x0b1f + 0xd);
     assert.equal(
