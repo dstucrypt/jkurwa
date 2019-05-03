@@ -25,7 +25,7 @@ try {
     // SHOULD NOT BE USED IN REAL CODE.
     getRandomValues(buf) {
       /* eslint-disable no-param-reassign, no-bitwise */
-      for (let i = 0; i < buf.length; i++) { // eslint-disable-line no-plusplus
+      for (let i = 0; i < buf.length; i+=1) {
         buf[i] = Math.random() * 255;
         buf[i] |= (Math.random() * 255) << 8;
         buf[i] |= (Math.random() * 255) << 16;
@@ -322,6 +322,18 @@ describe("Point", () => {
       );
 
       assert.equal(compressed.equals(expected), true);
+    });
+  });
+
+  describe("#toString()", () => {
+    it("should print points nicely", () => {
+      const pubX = new Field(PUB_X_HEX, "hex", curve);
+      const pubY = new Field(PUB_Y_HEX, "hex", curve);
+      const x = PUB_X_HEX.slice(2).toLowerCase();
+      const y = PUB_Y_HEX.slice(1).toLowerCase();
+
+      const point = curve.point(pubX, pubY);
+      assert.equal(point.toString(), `<Point x:<Field ${x}>, y:<Field ${y}> >`);
     });
   });
 });
