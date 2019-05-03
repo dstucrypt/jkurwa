@@ -408,8 +408,6 @@ describe("Certificate", () => {
       const serial = 14799991119 << 12; // eslint-disable-line no-bitwise
       const cert = jk.Certificate.signCert({
         privkey: priv,
-        algorithm: "Dstu4145le", // TODO: should be in privkey
-        curve: "DSTU_PB_257", // TODO: should be in privkey
         hash: algo.hash,
 
         certData: {
