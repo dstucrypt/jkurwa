@@ -397,7 +397,9 @@ describe("Certificate", () => {
 
   describe("Generated Cert", () => {
     const curve = jk.std_curve("DSTU_PB_257");
-    const priv = curve.keygen();
+    const priv = jk.Priv.from_asn1(
+      fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
+    );
 
     it("should generate and self-sign a cert", () => {
       const name = {

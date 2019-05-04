@@ -20,17 +20,24 @@ global.crypto = {
 
 describe("Signed Message", () => {
   const store = jk.guess_parse(keys.PEM_KEY_RAW);
-  const [key1] = store.keys;
+  const key1 = jk.Priv.from_asn1(
+    fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
+  );
+
   const data = Buffer.from("123");
   const algo = gost89.compat.algos();
   const dataHash = algo.hash(data);
   const sign = Buffer.from(
-    "e45fe541d047ae546825f91db53906306024ad12fcbe8185b9fce2e615e52b2084dad217d37612ee8761da493db0c4570ac5d323c649b1c83093897536b23a5b",
+    "d4b0cd06a8778184832c09dee6a6572abe50d2b330e41365a3eead0ea220bb590fbde9990d167a257605caf8225646f53d042db8a80377fad3bd0c5823f57877",
     "hex"
   );
   const time = 1540236305;
+  const lateTime = 1740236305;
 
   const cert = jk.Certificate.from_asn1(
+    fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`)
+  );
+  const otherCert = jk.Certificate.from_asn1(
     fs.readFileSync(`${__dirname}/data/SFS_1.cer`)
   );
 
@@ -115,10 +122,9 @@ describe("Signed Message", () => {
     });
 
     const transport = message.as_transport();
-    assert.equal(transport.length, 0x0b1f + 0xd);
     assert.equal(
-      transport.slice(0, 13).toString("binary"),
-      "UA1_SIGN\0\x1F\x0B\x00\x00"
+      transport.slice(0, 9).toString("binary"),
+      "UA1_SIGN\0"
     );
     assert.deepEqual(
       transport.slice(13),
@@ -151,7 +157,8 @@ describe("Signed Message", () => {
       cert,
       data,
       hash: algo.hash,
-      signer: key1
+      signer: key1,
+      signTime: lateTime,
     });
     assert.equal(message.verifyAttrs(algo.hash), false);
   });
@@ -169,10 +176,22 @@ describe("Signed Message", () => {
     assert.equal(message.verifyAttrs(algo.hash), false);
   });
 
-  it("should fail verification (pubkey does not match certificate)", () => {
+  it("should pass verification", () => {
     const message = new Message(
       fs.readFileSync(`${__dirname}/data/message.p7`)
     );
+    assert.equal(message.verify(algo.hash), true);
+  });
+
+  it("should fail verification if cert does not match", () => {
+    const message = new Message({
+      type: "signedData",
+      cert: otherCert,
+      data,
+      hash: algo.hash,
+      signTime: time,
+      signer: key1
+    });
     assert.equal(message.verify(algo.hash), false);
   });
 
@@ -180,7 +199,7 @@ describe("Signed Message", () => {
     const message = new Message({
       type: "envelopedData",
       data,
-      cert, // this certificate does not match private key
+      cert,
       toCert: cert,
       crypter: key1,
       algo
@@ -201,10 +220,9 @@ describe("Signed Message", () => {
       algo
     });
     const transport = message.as_transport();
-    assert.equal(transport.length, 0x0406 + 0xe);
     assert.deepEqual(
-      transport.slice(0, 0xe).toString("binary"),
-      "UA1_CRYPT\0\x06\x04\0\0"
+      transport.slice(0, 10).toString("binary"),
+      "UA1_CRYPT\0"
     );
     assert.deepEqual(
       transport.slice(0xe),
@@ -222,29 +240,28 @@ describe("Signed Message", () => {
       algo
     });
     const transport = message.as_transport({}, cert);
-    assert.equal(transport.length, 0x0406 + 0xe + 0x6f2);
     assert.deepEqual(
       transport.slice(0, 0x13).toString("binary"),
       "TRANSPORTABLE\0\x01\0\0\0\0"
     );
     assert.deepEqual(
-      transport.slice(0x13, 0x13 + 0xe).toString("binary"),
-      "CERTCRYPT\0\xD1\x06\0\0"
+      transport.slice(0x13, 0x13 + 10).toString("binary"),
+      "CERTCRYPT\0"
     );
 
-    assert.equal(cert.to_asn1().length, 0x6d1);
+    assert.equal(cert.to_asn1().length, 0x20d);
     assert.deepEqual(
-      transport.slice(0x13 + 0xe, 0x13 + 0xe + 0x6d1),
+      transport.slice(0x13 + 0xe, 0x13 + 0xe + 0x20d),
       cert.to_asn1()
     );
     assert.deepEqual(
       transport
-        .slice(0x13 + 0xe + 0x6d1, 0x13 + 0xe + 0x6d1 + 0xe)
+        .slice(0x13 + 0xe + 0x20D, 0x13 + 0xe + 0x20D + 10)
         .toString("binary"),
-      "UA1_CRYPT\0\x06\x04\0\0"
+      "UA1_CRYPT\0"
     );
     assert.deepEqual(
-      transport.slice(0x13 + 0xe + 0x6d1 + 0xe),
+      transport.slice(0x13 + 0xe + 0x20D + 0xe),
       fs.readFileSync(`${__dirname}/data/enc_message.p7`)
     );
   });

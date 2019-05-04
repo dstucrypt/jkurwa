@@ -39,45 +39,17 @@ describe("Box", () => {
 
     it("should parse message from transport buffer", () => {
       const { content } = box.unwrap(transport);
-      const message = new Message(content);
-      const [signInfo] = message.wrap.content.signerInfos;
-      assert.deepEqual(signInfo.encryptedDigest, sign);
-      assert.deepEqual(message.wrap.content.contentInfo.content, data);
-      const [signCert] = message.wrap.content.certificate;
-      assert.deepEqual(new jk.Certificate(signCert).as_dict(), cert.as_dict());
-      assert.equal(time * 1000, message.pattrs.signingTime);
-    });
-
-    it("should report broken signature on transport message", () => {
-      const {
-        error,
-        pipe: [, message]
-      } = box.unwrap(transport);
-      assert.deepEqual(error, "ESIGN");
-      assert.deepEqual(message, { broken_sign: true, error: "ESIGN" });
+      assert.deepEqual(content, Buffer.from('123', 'binary'));
     });
   });
 
   describe("signed p7s", () => {
     const p7s = fs.readFileSync(`${__dirname}/data/message.p7`);
+
     it("should parse buffer", () => {
       const { content } = box.unwrap(p7s);
-      const message = new Message(content);
-      const [signInfo] = message.wrap.content.signerInfos;
-      assert.deepEqual(signInfo.encryptedDigest, sign);
-      assert.deepEqual(message.wrap.content.contentInfo.content, data);
-      const [signCert] = message.wrap.content.certificate;
-      assert.deepEqual(new jk.Certificate(signCert).as_dict(), cert.as_dict());
-      assert.equal(time * 1000, message.pattrs.signingTime);
+      assert.deepEqual(content, Buffer.from('123', 'binary'));
     });
 
-    it("should report broken signature", () => {
-      const {
-        error,
-        pipe: [message]
-      } = box.unwrap(p7s);
-      assert.deepEqual(error, "ESIGN");
-      assert.deepEqual(message, { broken_sign: true, error: "ESIGN" });
-    });
   });
 });
