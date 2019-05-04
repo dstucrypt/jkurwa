@@ -400,6 +400,12 @@ describe("Certificate", () => {
     const priv = jk.Priv.from_asn1(
       fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
     );
+    const privEncE54B = jk.Priv.from_asn1(
+      fs.readFileSync(`${__dirname}/data/KeyE54B.cer`),
+    );
+    const privEnc40A0 = jk.Priv.from_asn1(
+      fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
+    );
 
     it("should generate and self-sign a cert", () => {
       const name = {
@@ -423,6 +429,58 @@ describe("Certificate", () => {
       const data = cert.as_asn1();
       assert.deepEqual(
         fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`),
+        data
+      );
+    });
+
+    it("should generate and self-sign encryption cert 40A0", () => {
+      const name = {
+        organizationName: "Very Much CA",
+        serialNumber: "UA-99999999",
+        localityName: "Wakanda"
+      };
+      const serial = 99991119 << 12; // eslint-disable-line no-bitwise
+      const cert = jk.Certificate.signCert({
+        privkey: privEnc40A0,
+        hash: algo.hash,
+
+        certData: {
+          serial,
+          issuer: name,
+          subject: name,
+          valid: { from: 1500000000000, to: 1700000000000 },
+          usage: "\x03\x02\x03\x08"
+        }
+      });
+      const data = cert.as_asn1();
+      assert.deepEqual(
+        fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`),
+        data
+      );
+    });
+
+    it("should generate and self-sign encryption cert E54B", () => {
+      const name = {
+        organizationName: "Very Much CA",
+        serialNumber: "UA-99999999",
+        localityName: "Wakanda"
+      };
+      const serial = 14799991119 << 12; // eslint-disable-line no-bitwise
+      const cert = jk.Certificate.signCert({
+        privkey: privEncE54B,
+        hash: algo.hash,
+
+        certData: {
+          serial,
+          issuer: name,
+          subject: name,
+          valid: { from: 1500000000000, to: 1700000000000 },
+          usage: "\x03\x02\x03\x08"
+        }
+      });
+      const data = cert.as_asn1();
+      assert.deepEqual(
+        fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_E54B.cer`),
         data
       );
     });

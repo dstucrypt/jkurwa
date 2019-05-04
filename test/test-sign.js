@@ -37,6 +37,9 @@ describe("Signed Message", () => {
   const cert = jk.Certificate.from_asn1(
     fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`)
   );
+  const toCert = jk.Certificate.from_asn1(
+    fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`)
+  );
   const otherCert = jk.Certificate.from_asn1(
     fs.readFileSync(`${__dirname}/data/SFS_1.cer`)
   );
@@ -200,7 +203,7 @@ describe("Signed Message", () => {
       type: "envelopedData",
       data,
       cert,
-      toCert: cert,
+      toCert,
       crypter: key1,
       algo
     });
@@ -215,7 +218,7 @@ describe("Signed Message", () => {
       type: "envelopedData",
       data,
       cert,
-      toCert: cert,
+      toCert,
       crypter: key1,
       algo
     });
@@ -235,7 +238,7 @@ describe("Signed Message", () => {
       type: "envelopedData",
       data,
       cert,
-      toCert: cert,
+      toCert,
       crypter: key1,
       algo
     });

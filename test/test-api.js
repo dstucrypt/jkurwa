@@ -10,7 +10,7 @@ describe("API", () => {
   const curve = jk.std_curve("DSTU_PB_257");
 
   const expectD = new jk.Field(
-    "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d",
+    "00a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d",
     "hex",
     curve
   );
@@ -32,7 +32,7 @@ describe("API", () => {
       const priv = new jk.Priv(
         curve,
         new Field(
-          "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d",
+          "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d",
           "hex",
           curve
         )
@@ -43,7 +43,7 @@ describe("API", () => {
 
     it("should create private key from hex string through curve.pkey()", () => {
       const priv = curve.pkey(
-        "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
+        "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
       );
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD), true);
@@ -59,7 +59,7 @@ describe("API", () => {
 
     it("should serialize trinominal private key to asn1", () => {
       const priv = curve.pkey(
-        "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
+        "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
       );
       assert.deepEqual(
         fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
@@ -89,7 +89,7 @@ describe("API", () => {
     it("should create private key from hex string through jk.pkey()", () => {
       const priv = jk.pkey(
         "DSTU_PB_257",
-        "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
+        "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
       );
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD), true);
@@ -98,7 +98,6 @@ describe("API", () => {
 
     it("should create private key from u8 BE buffer through jk.pkey()", () => {
       const buffer = [
-        4,
         10,
         14,
         20,
@@ -149,7 +148,6 @@ describe("API", () => {
         0x16010115,
         0x001e091b,
         0x0a0e1400,
-        0x4
       ];
 
       const priv = jk.pkey("DSTU_PB_257", buffer, "buf32");

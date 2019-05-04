@@ -15,7 +15,19 @@ describe("Box", () => {
   const time = 1540236305;
 
   const cert = jk.Certificate.from_asn1(
-    fs.readFileSync(`${__dirname}/data/SFS_1.cer`)
+    fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`)
+  );
+  const toCert = jk.Certificate.from_asn1(
+    fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`)
+  );
+  const priv = jk.Priv.from_asn1(
+    fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
+  );
+  const privEnc40A0 = jk.Priv.from_asn1(
+    fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
+  );
+  const privEncE54B = jk.Priv.from_asn1(
+    fs.readFileSync(`${__dirname}/data/KeyE54B.cer`),
   );
 
   const box = new jk.Box({ algo });
@@ -52,4 +64,42 @@ describe("Box", () => {
     });
 
   });
+
+  describe("encrypted p7s", () => {
+    const p7s = fs.readFileSync(`${__dirname}/data/enc_message.p7`);
+
+    it("should throw when key is not loaded into box", () => {
+      assert.throws(
+        ()=> box.unwrap(p7s),
+        /No key-certificate pair found for given op encrypt and role /
+      );
+    });
+
+    it("should throw if loaded key is marked as signature-only", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({priv, cert});
+      assert.throws(
+        ()=> boxWithKey.unwrap(p7s),
+        /No key-certificate pair found for given op encrypt and role /
+      );
+
+    });
+
+    it("should return error if sender certificate is not found during lookup", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({priv: privEnc40A0, cert: toCert});
+      const {error} = boxWithKey.unwrap(p7s);
+      assert.equal(error, 'ENOCERT');
+    });
+
+    it("should unwrap if both certificates are present", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({priv: privEnc40A0, cert: toCert});
+      boxWithKey.load({cert});
+      const {content} = boxWithKey.unwrap(p7s);
+      assert.deepEqual(content, Buffer.from('123'));
+    });
+
+  });
+
 });
