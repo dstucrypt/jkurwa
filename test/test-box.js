@@ -58,9 +58,34 @@ describe("Box", () => {
   describe("signed p7s", () => {
     const p7s = fs.readFileSync(`${__dirname}/data/message.p7`);
 
-    it("should parse buffer", () => {
+    it("should return signed content", () => {
       const { content } = box.unwrap(p7s);
       assert.deepEqual(content, Buffer.from('123', 'binary'));
+    });
+
+  });
+
+  describe("detached sign p7s", () => {
+    const p7s = fs.readFileSync(`${__dirname}/data/message_detached.p7`);
+
+    it("should report error if message is no supplied", () => {
+      const { content, error } = box.unwrap(p7s);
+      assert.deepEqual(error, 'ENODATA');
+      assert.deepEqual(content, p7s);
+    });
+
+    it("should return signed content if supplied separately", () => {
+      const detachedContent = Buffer.from('123');
+      const { content, error } = box.unwrap(p7s, detachedContent);
+      assert.equal(error, null);
+      assert.deepEqual(content, detachedContent);
+    });
+
+    it("should return error if detached content does not match signature", () => {
+      const detachedContent = Buffer.from('1234');
+      const { content, error } = box.unwrap(p7s, detachedContent);
+      assert.deepEqual(error, 'ESIGN');
+      assert.deepEqual(content, p7s);
     });
 
   });

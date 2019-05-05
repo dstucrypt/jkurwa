@@ -89,6 +89,22 @@ describe("Signed Message", () => {
     );
   });
 
+  it("should serialize detached sign to asn1 buffer", () => {
+    const message = new Message({
+      type: "signedData",
+      cert,
+      dataHash,
+      hash: algo.hash,
+      signTime: time,
+      signer: key1
+    });
+
+    assert.deepEqual(
+      message.as_asn1(),
+      fs.readFileSync(`${__dirname}/data/message_detached.p7`)
+    );
+  });
+
   it("should serialize to transport format (tax office)", () => {
     const message = new Message({
       type: "signedData",
