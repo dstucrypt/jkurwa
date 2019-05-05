@@ -4,6 +4,16 @@ const assert = require("assert");
 const fs = require("fs");
 const jk = require("../lib");
 
+const NOT_RANDOM_32 = Buffer.from("12345678901234567890123456789012");
+
+global.crypto = {
+  // Moch random only for testing purposes.
+  // SHOULD NOT BE USED IN REAL CODE.
+  getRandomValues() {
+    return NOT_RANDOM_32;
+  }
+};
+
 describe("Box", () => {
   const algo = gost89.compat.algos();
 
@@ -27,6 +37,7 @@ describe("Box", () => {
   );
 
   const box = new jk.Box({ algo });
+  const time = 1540236305;
 
   describe("transport", () => {
     const transport = fs.readFileSync(`${__dirname}/data/message.transport`);
@@ -227,6 +238,35 @@ describe("Box", () => {
     it("should pass cleartext back if it does not match any format", () => {
       const { content } = box.unwrap(Buffer.from("123"));
       assert.deepEqual(content, Buffer.from("123"));
+    });
+  });
+
+  describe("create signature", () => {
+    const boxWithKey = new jk.Box({ algo });
+    boxWithKey.load({ priv, cert });
+
+    it("should sign message with signing key", () => {
+      const data = boxWithKey.pipe(
+        Buffer.from("123"),
+        [{ op: "sign", time }],
+        {}
+      );
+      assert.deepEqual(data, fs.readFileSync(`${__dirname}/data/message.p7`));
+    });
+
+    it("should sign message with signing key (async)", done => {
+      boxWithKey.pipe(
+        Buffer.from("123"),
+        [{ op: "sign", time }],
+        {},
+        data => {
+          assert.deepEqual(
+            data,
+            fs.readFileSync(`${__dirname}/data/message.p7`)
+          );
+          done();
+        }
+      );
     });
   });
 });

@@ -423,7 +423,7 @@ describe("Certificate", () => {
           issuer: name,
           subject: name,
           valid: { from: 1500000000000, to: 1700000000000 },
-          usage: "\x03\x02\x01\x06"
+          usage: "\x03\x02\x06\xC0"
         }
       });
       const data = cert.as_asn1();

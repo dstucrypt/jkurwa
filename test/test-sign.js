@@ -28,7 +28,7 @@ describe("Signed Message", () => {
   const algo = gost89.compat.algos();
   const dataHash = algo.hash(data);
   const sign = Buffer.from(
-    "d4b0cd06a8778184832c09dee6a6572abe50d2b330e41365a3eead0ea220bb590fbde9990d167a257605caf8225646f53d042db8a80377fad3bd0c5823f57877",
+    "a2f0f6927e40a651876548c53052dba0f6240adb5d0bffa23b5ed617c4398a600dd1257022b776eb16290c71de9804600307ecb01a2990c387ab7269dd44d917",
     "hex"
   );
   const time = 1540236305;
