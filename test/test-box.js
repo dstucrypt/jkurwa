@@ -297,6 +297,18 @@ describe("Box", () => {
       );
     });
 
+    it("should encrypt message with encryption key and recipient passed as PEM", () => {
+      const data = boxWithKey.pipe(
+        Buffer.from("123"),
+        [{ op: "encrypt", forCert: toCert.to_pem() }],
+        {}
+      );
+      assert.deepEqual(
+        data,
+        fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+      );
+    });
+
     it("should encrypt message with encryption key (async)", done => {
       boxWithKey.pipe(
         Buffer.from("123"),
