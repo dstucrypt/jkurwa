@@ -159,12 +159,12 @@ describe("Box", () => {
   describe("encrypted transport", () => {
     const p7s = fs.readFileSync(`${__dirname}/data/enc_message.transport`);
 
-    it("should throw when key is not loaded into box", () => {
+    it("should report ENOKEY if key is not loaded into box", () => {
       const { error } = box.unwrap(p7s);
       assert.equal(error, "ENOKEY");
     });
 
-    it("should throw if loaded key is marked as signature-only", () => {
+    it("should report ENOKEY if loaded key is marked as signature-only", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv, cert });
       const { error } = boxWithKey.unwrap(p7s);
@@ -212,6 +212,20 @@ describe("Box", () => {
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
       boxWithKey.load({ cert });
       const { content } = boxWithKey.unwrap(p7s);
+      assert.deepEqual(content, Buffer.from("123"));
+    });
+  });
+
+  describe("clear data container", () => {
+    it("should expect to see asn1 structure in transport container", () => {
+      const clear = fs.readFileSync(
+        `${__dirname}/data/clear_message.transport`
+      );
+      assert.throws(() => box.unwrap(clear), /Failed to match tag/);
+    });
+
+    it("should pass cleartext back if it does not match any format", () => {
+      const { content } = box.unwrap(Buffer.from("123"));
       assert.deepEqual(content, Buffer.from("123"));
     });
   });
