@@ -273,6 +273,18 @@ describe("Box", () => {
     const boxWithKey = new jk.Box({ algo });
     boxWithKey.load({ priv: privEnc6929, cert: cert6929 });
 
+    it("should throw if receipient not specified", () => {
+      assert.throws(
+        () =>
+          boxWithKey.pipe(
+            Buffer.from("123"),
+            [{ op: "encrypt" }],
+            {}
+          ),
+        /No recipient specified for encryption/
+      );
+    });
+
     it("should encrypt message with encryption key", () => {
       const data = boxWithKey.pipe(
         Buffer.from("123"),
