@@ -69,20 +69,15 @@ describe("Box", () => {
     const p7s = fs.readFileSync(`${__dirname}/data/enc_message.p7`);
 
     it("should throw when key is not loaded into box", () => {
-      assert.throws(
-        ()=> box.unwrap(p7s),
-        /No key-certificate pair found for given op encrypt and role /
-      );
+      const {error} = box.unwrap(p7s);
+      assert.equal(error, 'ENOKEY');
     });
 
     it("should throw if loaded key is marked as signature-only", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({priv, cert});
-      assert.throws(
-        ()=> boxWithKey.unwrap(p7s),
-        /No key-certificate pair found for given op encrypt and role /
-      );
-
+      const {error} = boxWithKey.unwrap(p7s);
+      assert.equal(error, 'ENOKEY');
     });
 
     it("should return error if sender certificate is not found during lookup", () => {
