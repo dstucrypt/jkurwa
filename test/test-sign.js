@@ -280,8 +280,8 @@ describe("Signed Message", () => {
       "UA1_CRYPT\0"
     );
     assert.deepEqual(
-      transport.slice(0x13 + 0xe + 0x20D + 0xe),
-      fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+      transport,
+      fs.readFileSync(`${__dirname}/data/enc_message.transport`)
     );
   });
 });

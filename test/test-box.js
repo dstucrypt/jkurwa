@@ -122,4 +122,37 @@ describe("Box", () => {
 
   });
 
+  describe("encrypted transport", () => {
+    const p7s = fs.readFileSync(`${__dirname}/data/enc_message.transport`);
+
+    it("should throw when key is not loaded into box", () => {
+      const {error} = box.unwrap(p7s);
+      assert.equal(error, 'ENOKEY');
+    });
+
+    it("should throw if loaded key is marked as signature-only", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({priv, cert});
+      const {error} = boxWithKey.unwrap(p7s);
+      assert.equal(error, 'ENOKEY');
+    });
+
+    it("should use sender certificate from transport container", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({priv: privEnc40A0, cert: toCert});
+      const {content, error} = boxWithKey.unwrap(p7s);
+      assert.equal(error, null);
+      assert.deepEqual(content, Buffer.from('123'));
+    });
+
+    it("should unwrap if both certificates are present", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({priv: privEnc40A0, cert: toCert});
+      boxWithKey.load({cert});
+      const {content} = boxWithKey.unwrap(p7s);
+      assert.deepEqual(content, Buffer.from('123'));
+    });
+
+  });
+
 });
