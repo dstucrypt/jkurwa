@@ -403,6 +403,9 @@ describe("Certificate", () => {
     const privEncE54B = jk.Priv.from_asn1(
       fs.readFileSync(`${__dirname}/data/KeyE54B.cer`),
     );
+    const privEnc6929 = jk.Priv.from_asn1(
+      fs.readFileSync(`${__dirname}/data/Key6929.cer`)
+    );
     const privEnc40A0 = jk.Priv.from_asn1(
       fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
     );
@@ -455,6 +458,32 @@ describe("Certificate", () => {
       const data = cert.as_asn1();
       assert.deepEqual(
         fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`),
+        data
+      );
+    });
+
+    it("should generate and self-sign encryption cert 6929", () => {
+      const name = {
+        organizationName: "Very Much CA",
+        serialNumber: "UA-99999991",
+        localityName: "Wakanda"
+      };
+      const serial = 99991111 << 12; // eslint-disable-line no-bitwise
+      const cert = jk.Certificate.signCert({
+        privkey: privEnc6929,
+        hash: algo.hash,
+
+        certData: {
+          serial,
+          issuer: name,
+          subject: name,
+          valid: { from: 1500000000000, to: 1700000000000 },
+          usage: "\x03\x02\x03\x08"
+        }
+      });
+      const data = cert.as_asn1();
+      assert.deepEqual(
+        fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_6929.cer`),
         data
       );
     });

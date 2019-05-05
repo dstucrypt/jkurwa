@@ -14,6 +14,11 @@ describe("API", () => {
     "hex",
     curve
   );
+  const expectD6929 = new jk.Field(
+    "6929ac618d278e5a9aabe5e1daf6e7f21a712cc0451cf91525a20fb1f8dddd63",
+    "hex",
+    curve,
+  );
 
   const expectD431 = new jk.Field(
     "e54bf3f92a281d02f46ad5637387a8f13c9698816cb440a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d",
@@ -55,6 +60,14 @@ describe("API", () => {
       );
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD), true);
+    });
+
+    it("should read trinominal private key from asn1 (6929)", () => {
+      const priv = jk.Priv.from_asn1(
+        fs.readFileSync(`${__dirname}/data/Key6929.cer`)
+      );
+      assert.equal(priv.type, "Priv");
+      assert.equal(priv.d.equals(expectD6929), true);
     });
 
     it("should serialize trinominal private key to asn1", () => {

@@ -20,6 +20,9 @@ describe("Box", () => {
   const cert = jk.Certificate.from_asn1(
     fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`)
   );
+  const cert6929 = jk.Certificate.from_asn1(
+    fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_6929.cer`)
+  );
   const toCert = jk.Certificate.from_asn1(
     fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`)
   );
@@ -34,6 +37,9 @@ describe("Box", () => {
   );
   const privEncE54B = jk.Priv.from_asn1(
     fs.readFileSync(`${__dirname}/data/KeyE54B.cer`)
+  );
+  const privEnc6929 = jk.Priv.from_asn1(
+    fs.readFileSync(`${__dirname}/data/Key6929.cer`)
   );
 
   const box = new jk.Box({ algo });
@@ -120,7 +126,7 @@ describe("Box", () => {
     it("should return ENOKEY if encryption certificate found, but has no matching key", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv: privEncE54B, cert: toCert });
-      boxWithKey.load({ cert });
+      boxWithKey.load({ cert: cert6929 });
       const { error } = boxWithKey.unwrap(p7s);
       assert.equal(error, "ENOKEY");
     });
@@ -131,7 +137,7 @@ describe("Box", () => {
        * This error is not a part of normal operation. */
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv: privEncE54B, cert: certE54B });
-      boxWithKey.load({ cert });
+      boxWithKey.load({ cert: cert6929 });
       assert.throws(
         () => boxWithKey.unwrap(p7s),
         /Key unwrap failed. Checksum mismatch/
@@ -142,7 +148,7 @@ describe("Box", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv: privEncE54B, cert: certE54B });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
-      boxWithKey.load({ cert });
+      boxWithKey.load({ cert: cert6929 });
       assert.throws(
         () => boxWithKey.unwrap(p7s),
         /Key unwrap failed. Checksum mismatch/
@@ -153,16 +159,18 @@ describe("Box", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
       boxWithKey.load({ priv: privEncE54B, cert: certE54B });
-      boxWithKey.load({ cert });
-      const { content } = boxWithKey.unwrap(p7s);
+      boxWithKey.load({ cert: cert6929 });
+      const { content, error } = boxWithKey.unwrap(p7s);
+      assert.equal(error, null);
       assert.deepEqual(content, Buffer.from("123"));
     });
 
     it("should unwrap if both certificates are present", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
-      boxWithKey.load({ cert });
-      const { content } = boxWithKey.unwrap(p7s);
+      boxWithKey.load({ cert: cert6929 });
+      const { content, error } = boxWithKey.unwrap(p7s);
+      assert.equal(error, null);
       assert.deepEqual(content, Buffer.from("123"));
     });
   });
@@ -190,30 +198,21 @@ describe("Box", () => {
       assert.deepEqual(content, Buffer.from("123"));
     });
 
-    it("should unwrap if both certificates are present", () => {
-      const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({ priv: privEnc40A0, cert: toCert });
-      boxWithKey.load({ cert });
-      const { content } = boxWithKey.unwrap(p7s);
-      assert.deepEqual(content, Buffer.from("123"));
-    });
-
     it("should supply all key material at initialisation time", () => {
       const keys = [
-        { cert },
+        { cert: cert6929 },
         { priv: privEnc40A0, cert: toCert },
         { priv: privEncE54B, cert: certE54B }
       ];
       const boxWithKey = new jk.Box({ algo, keys });
-      boxWithKey.load({ priv: privEnc40A0, cert: toCert });
-      boxWithKey.load({ cert });
-      const { content } = boxWithKey.unwrap(p7s);
+      const { content, error } = boxWithKey.unwrap(p7s);
+      assert.equal(error, null);
       assert.deepEqual(content, Buffer.from("123"));
     });
 
     it("should supply all key material at initialisation time and match keys with certificates itself", () => {
       const keys = [
-        { cert },
+        { cert: cert6929 },
         { cert: toCert },
         { cert: certE54B },
         { priv: privEnc40A0 },
@@ -263,6 +262,38 @@ describe("Box", () => {
           assert.deepEqual(
             data,
             fs.readFileSync(`${__dirname}/data/message.p7`)
+          );
+          done();
+        }
+      );
+    });
+  });
+
+  describe("encrypt message", () => {
+    const boxWithKey = new jk.Box({ algo });
+    boxWithKey.load({ priv: privEnc6929, cert: cert6929 });
+
+    it("should encrypt message with encryption key", () => {
+      const data = boxWithKey.pipe(
+        Buffer.from("123"),
+        [{ op: "encrypt", forCert: toCert }],
+        {}
+      );
+      assert.deepEqual(
+        data,
+        fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+      );
+    });
+
+    it("should encrypt message with encryption key (async)", done => {
+      boxWithKey.pipe(
+        Buffer.from("123"),
+        [{ op: "encrypt", forCert: toCert }],
+        {},
+        data => {
+          assert.deepEqual(
+            data,
+            fs.readFileSync(`${__dirname}/data/enc_message.p7`)
           );
           done();
         }
