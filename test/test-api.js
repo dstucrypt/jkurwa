@@ -62,6 +62,14 @@ describe("API", () => {
       assert.equal(priv.d.equals(expectD), true);
     });
 
+    it("should read trinominal private key from pem", () => {
+      const priv = jk.Priv.from_pem(
+        fs.readFileSync(`${__dirname}/data/Key40A0.pem`)
+      );
+      assert.equal(priv.type, "Priv");
+      assert.equal(priv.d.equals(expectD), true);
+    });
+
     it("should read trinominal private key from asn1 (6929)", () => {
       const priv = jk.Priv.from_asn1(
         fs.readFileSync(`${__dirname}/data/Key6929.cer`)
@@ -77,6 +85,16 @@ describe("API", () => {
       assert.deepEqual(
         fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
         priv.to_asn1()
+      );
+    });
+
+    it("should serialize trinominal private key to pem", () => {
+      const priv = curve.pkey(
+        "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
+      );
+      assert.deepEqual(
+        priv.to_pem(),
+        fs.readFileSync(`${__dirname}/data/Key40A0.pem`).toString(),
       );
     });
 

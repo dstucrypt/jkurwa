@@ -1,56 +1,60 @@
 /* eslint-env mocha */
+const fs = require('fs');
 const assert = require("assert");
-const jk = require("../lib/index.js");
+const algo = require('gost89/lib/compat').algos();
 
-const keys = require("./data/keys");
+const jk = require("../lib/index.js");
+const pbes2 = require('../lib/spec/pbes.js');
+const pem = require('../lib/util/pem.js');
+
 
 describe("Keycoder", () => {
-  const b257 = jk.std_curve("DSTU_PB_257");
-
-  const b431 = jk.std_curve("DSTU_PB_431");
-
-  function checkPB257(key) {
-    assert.equal(key.type, "Priv");
-
-    assert.equal(
-      key.d.toString(true),
-      "1111111111111111111111111111111111111111111111111111111111111111"
-    );
-
-    assert.equal(b257.equals(key.curve), true);
-  }
-
-  function checkPB431(key) {
-    assert.equal(key.type, "Priv");
-    assert.equal(
-      key.d.toString(true),
-      "888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888"
-    );
-
-    assert.equal(b431.equals(key.curve), true);
-  }
+  const enc = fs.readFileSync(`${__dirname}/data/STORE_A040.dat`);
+  const encPem = fs.readFileSync(`${__dirname}/data/STORE_A040.pem`).toString();
+  const priv = jk.Priv.from_pem(
+    fs.readFileSync(`${__dirname}/data/Key40A0.pem`)
+  );
 
   describe("#parse()", () => {
     it("should parse encrypted key in PEM format", () => {
-      const store = jk.guess_parse(keys.PEM_KEY_ENC);
+      const store = jk.guess_parse(enc);
       assert.equal(store.format, "PBES2");
     });
 
-    it("should parse raw key in PEM format", () => {
-      let store = jk.guess_parse(keys.PEM_KEY_RAW);
+    it("should serialize encrypted key to asn1", () => {
+      const store = jk.guess_parse(enc);
+      assert.deepEqual(pbes2.enc_serialize(store), enc);
+    });
 
-      assert.equal(store.format, "privkeys");
-      checkPB257(store.keys[0]);
-      checkPB431(store.keys[1]);
+    it("should serialize encrypted key to PEM", () => {
+      const store = jk.guess_parse(enc);
+      assert.deepEqual(
+        pem.to_pem(pbes2.enc_serialize(store), 'ENCRYPTED PRIVATE KEY'),
+        encPem,
+      );
+    });
 
-      const key = jk.Priv.from_pem(keys.PEM_KEY_RAW);
-      assert.equal(key.type, "Priv");
-      checkPB257(key);
+    it("should decrypt raw key from PBES2", () => {
+      const {keys: [key]} = jk.Priv.from_protected(enc, "password", algo);
+      assert.deepEqual(key, priv);
+    });
 
-      store = jk.Priv.from_pem(keys.PEM_KEY_RAW, true);
-      assert.equal(store.format, "privkeys");
-      checkPB257(store.keys[0]);
-      checkPB431(store.keys[1]);
+   it("should decrypt raw key from PBES2 (PEM)", () => {
+      const {keys: [key]} = jk.Priv.from_protected(encPem, "password", algo);
+      assert.deepEqual(key, priv);
+    });
+
+    it("should encrypt raw key and serialize into PBES2", () => {
+      const iv = Buffer.from('4bb10f5c2945d49e', 'hex');
+      const salt = Buffer.from('31a58dc1462981189cf6c701e276c7553a5ab5f6e36d8418e4aa40c930cf3876', 'hex');
+      const store = algo.storesave(
+        Buffer.from(priv.to_asn1()), 'PBES2', 'password', iv, salt,
+      );
+
+      assert.deepEqual(
+        fs.readFileSync(`${__dirname}/data/STORE_A040.dat`),
+        pbes2.enc_serialize(store)
+      );
     });
   });
 });

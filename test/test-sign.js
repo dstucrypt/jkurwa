@@ -6,8 +6,6 @@ const fs = require("fs");
 const jk = require("../lib");
 const Message = require("../lib/models/Message");
 
-const keys = require("./data/keys");
-
 const NOT_RANDOM_32 = Buffer.from("12345678901234567890123456789012");
 
 global.crypto = {
@@ -23,7 +21,6 @@ function assertEqualSaved(buffer, filename) {
 }
 
 describe("Signed Message", () => {
-  const store = jk.guess_parse(keys.PEM_KEY_RAW);
   const key1 = jk.Priv.from_asn1(
     fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
   );
