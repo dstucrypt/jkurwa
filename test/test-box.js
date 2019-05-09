@@ -219,11 +219,34 @@ describe("Box", () => {
         { priv: privEncE54B }
       ];
       const boxWithKey = new jk.Box({ algo, keys });
-      boxWithKey.load({ priv: privEnc40A0, cert: toCert });
-      boxWithKey.load({ cert });
       const { content } = boxWithKey.unwrap(p7s);
       assert.deepEqual(content, Buffer.from("123"));
     });
+
+    it("should read key material from filesystem", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({ privPath: `${__dirname}/data/Key40A0.cer` });
+      boxWithKey.load({ certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer` });
+      const { content } = boxWithKey.unwrap(p7s);
+      assert.deepEqual(content, Buffer.from("123"));
+    });
+
+    it("should read key material from DER/PEM", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({ privPath: `${__dirname}/data/STORE_A040.pem`, password: 'password' });
+      boxWithKey.load({ certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer` });
+      const { content } = boxWithKey.unwrap(p7s);
+      assert.deepEqual(content, Buffer.from("123"));
+    });
+
+    it("should read encrypted key from filesystem", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({ privPem: fs.readFileSync(`${__dirname}/data/Key40A0.pem`) });
+      boxWithKey.load({ certPem: fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`) });
+      const { content } = boxWithKey.unwrap(p7s);
+      assert.deepEqual(content, Buffer.from("123"));
+    });
+
   });
 
   describe("clear data container", () => {
