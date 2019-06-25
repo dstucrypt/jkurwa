@@ -226,27 +226,37 @@ describe("Box", () => {
     it("should read key material from filesystem", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ privPath: `${__dirname}/data/Key40A0.cer` });
-      boxWithKey.load({ certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer` });
+      boxWithKey.load({
+        certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
+      });
       const { content } = boxWithKey.unwrap(p7s);
       assert.deepEqual(content, Buffer.from("123"));
     });
 
     it("should read key material from DER/PEM", () => {
       const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({ privPath: `${__dirname}/data/STORE_A040.pem`, password: 'password' });
-      boxWithKey.load({ certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer` });
+      boxWithKey.load({
+        privPath: `${__dirname}/data/STORE_A040.pem`,
+        password: "password"
+      });
+      boxWithKey.load({
+        certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
+      });
       const { content } = boxWithKey.unwrap(p7s);
       assert.deepEqual(content, Buffer.from("123"));
     });
 
     it("should read encrypted key from filesystem", () => {
       const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({ privPem: fs.readFileSync(`${__dirname}/data/Key40A0.pem`) });
-      boxWithKey.load({ certPem: fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`) });
+      boxWithKey.load({
+        privPem: fs.readFileSync(`${__dirname}/data/Key40A0.pem`)
+      });
+      boxWithKey.load({
+        certPem: fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`)
+      });
       const { content } = boxWithKey.unwrap(p7s);
       assert.deepEqual(content, Buffer.from("123"));
     });
-
   });
 
   describe("clear data container", () => {
@@ -267,28 +277,35 @@ describe("Box", () => {
     const boxWithKey = new jk.Box({ algo });
     boxWithKey.load({ priv, cert });
 
-    it("should sign message with signing key", () => {
-      const data = boxWithKey.pipe(
-        Buffer.from("123"),
-        [{ op: "sign", time }],
-        {}
-      );
-      assert.deepEqual(data, fs.readFileSync(`${__dirname}/data/message.p7`));
+    it("should sign message with signing key", done => {
+      boxWithKey
+        .pipe(
+          Buffer.from("123"),
+          [{ op: "sign", time }],
+          {}
+        )
+        .then(data =>
+          assert.deepEqual(
+            data,
+            fs.readFileSync(`${__dirname}/data/message.p7`)
+          )
+        )
+        .then(done);
     });
 
     it("should sign message with signing key (async)", done => {
-      boxWithKey.pipe(
-        Buffer.from("123"),
-        [{ op: "sign", time }],
-        {},
-        data => {
+      boxWithKey
+        .pipe(
+          Buffer.from("123"),
+          [{ op: "sign", time }]
+        )
+        .then(data => {
           assert.deepEqual(
             data,
             fs.readFileSync(`${__dirname}/data/message.p7`)
           );
-          done();
-        }
-      );
+        })
+        .then(done);
     });
   });
 
@@ -308,43 +325,50 @@ describe("Box", () => {
       );
     });
 
-    it("should encrypt message with encryption key", () => {
-      const data = boxWithKey.pipe(
-        Buffer.from("123"),
-        [{ op: "encrypt", forCert: toCert }],
-        {}
-      );
-      assert.deepEqual(
-        data,
-        fs.readFileSync(`${__dirname}/data/enc_message.p7`)
-      );
-    });
-
-    it("should encrypt message with encryption key and recipient passed as PEM", () => {
-      const data = boxWithKey.pipe(
-        Buffer.from("123"),
-        [{ op: "encrypt", forCert: toCert.to_pem() }],
-        {}
-      );
-      assert.deepEqual(
-        data,
-        fs.readFileSync(`${__dirname}/data/enc_message.p7`)
-      );
-    });
-
-    it("should encrypt message with encryption key (async)", done => {
-      boxWithKey.pipe(
-        Buffer.from("123"),
-        [{ op: "encrypt", forCert: toCert }],
-        {},
-        data => {
+    it("should encrypt message with encryption key", done => {
+      boxWithKey
+        .pipe(
+          Buffer.from("123"),
+          [{ op: "encrypt", forCert: toCert }]
+        )
+        .then(data =>
           assert.deepEqual(
             data,
             fs.readFileSync(`${__dirname}/data/enc_message.p7`)
-          );
-          done();
-        }
-      );
+          )
+        )
+        .then(done);
+    });
+
+    it("should encrypt message with encryption key and recipient passed as PEM", done => {
+      boxWithKey
+        .pipe(
+          Buffer.from("123"),
+          [{ op: "encrypt", forCert: toCert.to_pem() }],
+          {}
+        )
+        .then(data =>
+          assert.deepEqual(
+            data,
+            fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+          )
+        )
+        .then(done);
+    });
+
+    it("should encrypt message with encryption key (async)", done => {
+      boxWithKey
+        .pipe(
+          Buffer.from("123"),
+          [{ op: "encrypt", forCert: toCert }]
+        )
+        .then(data =>
+          assert.deepEqual(
+            data,
+            fs.readFileSync(`${__dirname}/data/enc_message.p7`)
+          )
+        )
+        .then(done);
     });
   });
 });
