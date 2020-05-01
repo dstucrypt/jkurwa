@@ -1,14 +1,13 @@
-var fs = require('fs'),
-    jk = require('../lib/index.js'),
-    em_gost = require('em-gost'),
-    keycoder = new jk.Keycoder();
+const fs = require('fs');
+const jk = require('../lib/index.js');
+const gost89 = require('gost89');
 
 
 
-var decrypt_buffer = function(u8, priv, cert) {
-    var msg_wrap, msg, kek, cek, wcek, data;
+function decrypt_buffer(u8, priv, cert) {
+    let msg_wrap, msg, data;
     try {
-        data = new Buffer(u8, 'binary');
+        data = new Buffer.from(u8, 'binary');
         msg_wrap = new jk.models.Message(data);
     } catch(e) {
         console.log('e', e);
@@ -16,49 +15,21 @@ var decrypt_buffer = function(u8, priv, cert) {
     }
 
     if(msg_wrap.type === 'signedData') {
-        msg = msg_wrap.unpack();
+        msg = new jk.models.Message(msg.info.contentInfo.content);
     } else {
         msg = msg_wrap;
     }
-
-    try {
-        cert = msg.signer();
-    } catch(e) {
-        try {
-            cert = msg_wrap.signer();
-        } catch(_ignore) {
-            if(cert === undefined) {
-                throw new Error("Cant find signer certifiate");
-            }
-        }
-    }
-
-    if(msg.type !== 'envelopedData') {
-        console.log(msg.toString());
-        throw new Error("File is not encrypted");
-    }
-
-    // assume only one recipient. can be not so
-    kek = priv.sharedKey(cert.pubkey, msg.rki.ukm, em_gost.gost_kdf);
-    wcek = msg.rki.recipientEncryptedKeys[0].encryptedKey;
-
-    try {
-        cek = em_gost.gost_unwrap(kek, wcek);
-    } catch (e) {
-        throw new Error("wailed to decrypt cek. key mismatch?");
-    }
-    return em_gost.gost_decrypt_cfb(msg.enc_contents, cek, msg.enc_params.iv);
+    return msg.decrypt(priv, gost89.compat.algos(), ()=> cert);
 };
 
 function main() {
-    var edata_b = fs.readFileSync('./enveloped.dat'), // encrypted content
-        store_b = fs.readFileSync('./keystore.dat'), // raw keystore
-        cert_b = fs.readFileSync('./cert.der'), // cert and pubkey
-                                                // of recipient
-        cert = keycoder.parse(cert_b),
-        store = keycoder.parse(keycoder.maybe_pem(store_b));
+    const edata_b = fs.readFileSync(`${__dirname}/../test/data/enc_message.p7`); // encrypted content
+    const store_b = fs.readFileSync(`${__dirname}/../test/data/Key40A0.cer`); // private key of recepient
+    const cert_b = fs.readFileSync(`${__dirname}/../test/data/SELF_SIGNED_ENC_6929.cer`); // cert and pubkey of sender
+    const cert = jk.Certificate.from_asn1(cert_b);
+    const priv = jk.Priv.from_asn1(store_b);
 
-    var ret = decrypt_buffer(edata_b, store.keys[0], cert);
+    const ret = decrypt_buffer(edata_b, priv, cert);
     fs.writeFileSync('./out.dat', ret);
 };
 

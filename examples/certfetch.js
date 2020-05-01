@@ -2,7 +2,7 @@ var Message = require('../lib/models/Message');
 var Certificate = require('../lib/models/Certificate');
 
 var Box = require('../lib/app/ctx');
-var gost89 = require('node-gost89');
+var gost89 = require('gost89');
 var fs = require('fs');
 
 var http = require('http');
@@ -86,8 +86,8 @@ function response(resp) {
 function main() {
     var box = new Box({
         keys: [{
-              privPath: './examples/testkey.dat',
-              password: '123',
+              privPath: `${__dirname}/../test/data/Key6929.cer`,
+              //password: '123',
               //privPath: './FOP_key.dat',
         }],
         algo: gost89.compat.algos()
