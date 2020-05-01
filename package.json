@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "mocha --reporter spec ./test/test*.js",
-    "cover": "npx istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout=10000"
+    "cover": "nyc npm run test; nyc report --reporter=lcov"
   },
   "repository": {
     "type": "git",
@@ -32,8 +32,8 @@
     "eslint-plugin-jsx-a11y": "^6.1.2",
     "eslint-plugin-react": "^7.11.1",
     "gost89": "^0.1.11",
-    "istanbul": "^0.4.5",
     "mocha": "^7.1.2",
+    "nyc": "^15.0.1",
     "prettier": "^1.17.0"
   },
   "dependencies": {
