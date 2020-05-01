@@ -41,8 +41,8 @@ describe("Certificate", () => {
     it("should parse certificate from binary", () => {
       assert.equal(cert.format, "x509");
       assert.equal(cert.curve.m, 257);
-      assert.deepEqual(cert.curve.mod_bits, [257, 12, 0]);
-      assert.deepEqual(cert.pk_data, [
+      assert.deepEqual(Array.from(cert.curve.mod_bits), [257, 12, 0]);
+      assert.deepEqual(Array.from(cert.pk_data), [
         "0x2c157a5f",
         "0x17857f3c",
         "0xee0ce4a5",
@@ -169,8 +169,8 @@ describe("Certificate", () => {
     it("should parse certificate from binary", () => {
       assert.equal(cert.format, "x509");
       assert.equal(cert.curve.m, 257);
-      assert.deepEqual(cert.curve.mod_bits, [257, 12, 0]);
-      assert.deepEqual(cert.pk_data, [
+      assert.deepEqual(Array.from(cert.curve.mod_bits), [257, 12, 0]);
+      assert.deepEqual(Array.from(cert.pk_data), [
         "0xb59265f0",
         "0xaaf792b8",
         "0xdda16518",
