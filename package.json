@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "mocha --reporter spec ./test/test*.js",
-    "cover": "nyc npm run test; nyc report --reporter=lcov"
+    "cover": "nyc npm run test && nyc report --reporter=lcov"
   },
   "repository": {
     "type": "git",
