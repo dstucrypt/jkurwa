@@ -27,7 +27,7 @@ function main() {
             }],
             requestExtensions: [{
                 extnID: 'OCSPNonce',
-                extnValue: new Buffer(20),
+                extnValue: Buffer.alloc(20),
             }],
         },
     }, 'der');

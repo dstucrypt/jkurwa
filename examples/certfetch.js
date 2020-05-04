@@ -45,7 +45,7 @@ function query(box) {
     });
 
     /* black magic here. blame eeeeeet */
-    var ct = new Buffer(120);
+    var ct = Buffer.alloc(120);
     ct.fill(0);
     keyids[0].copy(ct, 0xC);
     (keyids[1] || keyids[0]).copy(ct, 0x2C);

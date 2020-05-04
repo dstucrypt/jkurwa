@@ -5,7 +5,7 @@ const gost89 = require("gost89");
 function decrypt_buffer(u8, priv, cert) {
   let msg_wrap, msg, data;
   try {
-    data = new Buffer.from(u8, "binary");
+    data = Buffer.from(u8, "binary");
     msg_wrap = new jk.models.Message(data);
   } catch (e) {
     console.log("e", e);

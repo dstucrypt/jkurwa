@@ -18,7 +18,7 @@ function main() {
           hashAlgorithm: {
             algorithm: 'Gost34311',
           },
-          hashedMessage: new Buffer('313EEE9320AF932E719C7ECF3249C03699F6F5FFFB7D87653EB84459C0D943F2', 'hex'),
+          hashedMessage: Buffer.from('313EEE9320AF932E719C7ECF3249C03699F6F5FFFB7D87653EB84459C0D943F2', 'hex'),
         },
     }, 'der');
     var parsed = url.parse(cert.extension.tsp);
