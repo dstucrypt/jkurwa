@@ -4,3 +4,7 @@ jsbn2.js
 export.js
 big.js
 .git
+coverage
+.nyc_output
+.travis.yml
+codecov.yml
