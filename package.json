@@ -3,6 +3,9 @@
   "version": "1.2.0",
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
   "main": "lib/index.js",
+  "browser": {
+    "./lib/rand.js": "./lib/rand.browser.js"
+  },
   "scripts": {
     "test": "mocha --reporter spec ./test/test*.js",
     "cover": "nyc npm run test && nyc report --reporter=lcov"
