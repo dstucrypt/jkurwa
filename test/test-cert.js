@@ -6,18 +6,6 @@ const fs = require("fs");
 const jk = require("../lib/index.js");
 const strutil = require("../lib/util/str");
 
-/* eslint-disable no-global-assign, no-unused-expressions */
-const NOT_RANDOM_32 = Buffer.from("12345678901234567890123456789012");
-
-global.crypto = {
-  // Moch random only for testing purposes.
-  // SHOULD NOT BE USED IN REAL CODE.
-  getRandomValues() {
-    return NOT_RANDOM_32;
-  }
-};
-/* eslint-enable no-global-assign, no-unused-expressions */
-
 function repeate(inputStr, times) {
   let ret = "";
   let left = times;

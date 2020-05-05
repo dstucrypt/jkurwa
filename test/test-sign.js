@@ -6,16 +6,6 @@ const fs = require("fs");
 const jk = require("../lib");
 const Message = require("../lib/models/Message");
 
-const NOT_RANDOM_32 = Buffer.from("12345678901234567890123456789012");
-
-global.crypto = {
-  // Moch random only for testing purposes.
-  // SHOULD NOT BE USED IN REAL CODE.
-  getRandomValues() {
-    return NOT_RANDOM_32;
-  }
-};
-
 function assertEqualSaved(buffer, filename) {
   assert.deepEqual(fs.readFileSync(filename), buffer);
 }

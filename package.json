@@ -6,9 +6,17 @@
   "browser": {
     "./lib/rand.js": "./lib/rand.browser.js"
   },
+  "jest": {
+    "testRegex": [
+      "test/test.*.js"
+    ],
+    "setupFiles": [
+      "./test/setup.js"
+    ]
+  },
   "scripts": {
-    "test": "mocha --reporter spec ./test/test*.js",
-    "cover": "nyc npm run test && nyc report --reporter=lcov"
+    "test": "jest ./test/test*.js",
+    "cover": "npm run test -- --coverage"
   },
   "repository": {
     "type": "git",
@@ -35,8 +43,7 @@
     "eslint-plugin-jsx-a11y": "^6.1.2",
     "eslint-plugin-react": "^7.11.1",
     "gost89": "^0.1.11",
-    "mocha": "^7.1.2",
-    "nyc": "^15.0.1",
+    "jest": "^26.0.1",
     "prettier": "^1.17.0"
   },
   "dependencies": {
