@@ -15,7 +15,7 @@ Warning
 * Jkurwa does not guarranty constant-time calculcation;
 * Jkurwa only verifies signature against public key and does not actually check X.509 certificate validity (use openssl for this).
    
-![Yep](https://raw.githubusercontent.com/muromec/ukurwa4145/master/kdpv.jpg)
+![Yep](https://raw.githubusercontent.com/muromec/jkurwa/master/kdpv.jpg)
 
 [![Build Status](https://travis-ci.org/dstucrypt/jkurwa.svg?branch=master)](https://travis-ci.org/dstucrypt/jkurwa)
 [![codecov](https://codecov.io/gh/dstucrypt/jkurwa/branch/master/graph/badge.svg)](https://codecov.io/gh/dstucrypt/jkurwa)
