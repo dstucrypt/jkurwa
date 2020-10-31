@@ -113,6 +113,14 @@ describe("Box", () => {
       assert.equal(error, "ENOCERT");
     });
 
+    it("should return ENOKEY if receiver certiviate it not found during lookup", () => {
+      const boxWithKey = new jk.Box({ algo });
+      boxWithKey.load({ priv: privEncE54B, cert: certE54B });
+      boxWithKey.load({ cert: cert6929 });
+      const { error } = boxWithKey.unwrap(p7s);
+      assert.equal(error, "ENOKEY");
+    });
+
     it("should return ENOKEY if encryption certificate found, but has no matching key", () => {
       const boxWithKey = new jk.Box({ algo });
       boxWithKey.load({ priv: privEncE54B, cert: toCert });
@@ -126,19 +134,11 @@ describe("Box", () => {
        * collision and supplying matching certificate with wrong key
        * This error is not a part of normal operation. */
       const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({ priv: privEncE54B, cert: certE54B });
-      boxWithKey.load({ cert: cert6929 });
-      assert.throws(
-        () => boxWithKey.unwrap(p7s),
-        /Key unwrap failed. Checksum mismatch/
-      );
-    });
-
-    it("should not attemtp to recover from serial key collision if other matching certificate is also available", () => {
-      const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({ priv: privEncE54B, cert: certE54B });
+      const wicked6929 = jk.Certificate.from_asn1(cert6929.to_asn1());
+      wicked6929.pubkey.point.y.bytes[1] |= 0xff;
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
-      boxWithKey.load({ cert: cert6929 });
+      boxWithKey.load({ cert: wicked6929 });
+
       assert.throws(
         () => boxWithKey.unwrap(p7s),
         /Key unwrap failed. Checksum mismatch/
