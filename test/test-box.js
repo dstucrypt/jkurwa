@@ -213,27 +213,36 @@ describe("Box", () => {
       assert.deepEqual(content, Buffer.from("123"));
     });
 
-    it("should read key material from filesystem", () => {
-      const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({ privPath: `${__dirname}/data/Key40A0.cer` });
-      boxWithKey.load({
-        certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
+    describe("deprecated", () => {
+      beforeAll(() => {
+        jk.Box.EOLD.silent = true;
       });
-      const { content } = boxWithKey.unwrap(p7s);
-      assert.deepEqual(content, Buffer.from("123"));
-    });
+      afterAll(() => {
+        jk.Box.EOLD.silent = false;
+      });
 
-    it("should read key material from DER/PEM", () => {
-      const boxWithKey = new jk.Box({ algo });
-      boxWithKey.load({
-        privPath: `${__dirname}/data/STORE_A040.pem`,
-        password: "password"
+      it("should read key material from filesystem", () => {
+        const boxWithKey = new jk.Box({ algo });
+        boxWithKey.load({ privPath: `${__dirname}/data/Key40A0.cer` });
+        boxWithKey.load({
+          certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
+        });
+        const { content } = boxWithKey.unwrap(p7s);
+        assert.deepEqual(content, Buffer.from("123"));
       });
-      boxWithKey.load({
-        certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
+
+      it("should read key material from DER/PEM", () => {
+        const boxWithKey = new jk.Box({ algo });
+        boxWithKey.load({
+          privPath: `${__dirname}/data/STORE_A040.pem`,
+          password: "password"
+        });
+        boxWithKey.load({
+          certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
+        });
+        const { content } = boxWithKey.unwrap(p7s);
+        assert.deepEqual(content, Buffer.from("123"));
       });
-      const { content } = boxWithKey.unwrap(p7s);
-      assert.deepEqual(content, Buffer.from("123"));
     });
 
     it("should read encrypted key from filesystem", () => {
@@ -304,7 +313,7 @@ describe("Box", () => {
     boxWithKey.load({ priv: privEnc6929, cert: cert6929 });
 
     it("should throw if receipient not specified", () => {
-      assert.throws(
+      assert.rejects(
         () =>
           boxWithKey.pipe(
             Buffer.from("123"),
