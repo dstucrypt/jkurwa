@@ -13,7 +13,8 @@ Warning
 -------
 
 * Jkurwa does not guarranty constant-time calculcation;
-* Jkurwa only verifies signature against public key and does not actually check X.509 certificate validity (use openssl for this).
+* Jkurwa only verifies signature against public key and does not actually check X.509 certificate validity unless CA list is loaded.
+  See dstucrypt/agent repo readme for details.
    
 ![cej repo je strefa wolna wid Kaczyńskiego](https://raw.githubusercontent.com/muromec/jkurwa/master/kdpv.jpg)
 
