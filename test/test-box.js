@@ -35,6 +35,18 @@ describe("Box", () => {
   const box = new jk.Box({ algo });
   const time = 1540236305;
 
+  const caList = new jk.models.Message();
+  caList.wrap = {
+    contentType: 'signedData',
+    content: {
+      version: 1,
+      digestAlgorithms: [],
+      contentInfo: { contentType: "data" },
+      certificate: [cert, cert6929, toCert, certE54B].map(cert=> cert.ob),
+      signerInfos: []
+    }
+  };
+
   describe("transport", () => {
     const transport = fs.readFileSync(`${__dirname}/data/message.transport`);
 
@@ -65,6 +77,33 @@ describe("Box", () => {
       const { content } = await box.unwrap(p7s);
       assert.deepEqual(content, Buffer.from("123", "binary"));
     });
+
+    it("should return certificate but warn its unverified", async () => {
+      const { content, pipe } = await box.unwrap(p7s);
+      assert.equal(pipe.length, 1);
+      const [signed] = pipe;
+      assert.equal(signed.signed, true);
+      assert.deepEqual(signed.cert.subject, {
+       "localityName": "Wakanda",
+       "organizationName": "Very Much CA",
+       "serialNumber": "UA-99999999",});
+      assert.equal(!!signed.cert.verified, false);
+    });
+
+    it("should verify certificate against ca list", async () => {
+      const boxWithCA = new jk.Box({ algo });
+      boxWithCA.loadCAs(caList.as_asn1());
+      const { content, pipe } = await boxWithCA.unwrap(p7s);
+      assert.equal(pipe.length, 1);
+      const [signed] = pipe;
+      assert.equal(signed.signed, true);
+      assert.deepEqual(signed.cert.subject, {
+       "localityName": "Wakanda",
+       "organizationName": "Very Much CA",
+       "serialNumber": "UA-99999999",});
+      assert.equal(signed.cert.verified, true);
+    });
+
   });
 
   describe("detached sign p7s", () => {
