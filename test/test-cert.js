@@ -252,10 +252,12 @@ describe("Certificate", () => {
     it("should verify validity of self-signed root", () => {
       const cert = jk.Certificate.from_asn1(data);
       assert.equal(
-        cert.verifySelfSigned({
-          time: 1556798940000,
-          dstuHash: algo.hash
-        }),
+        cert.verifySelfSigned(
+          {
+            time: 1556798940000
+          },
+          { Dstu4145le: algo.hash }
+        ),
         true
       );
     });
@@ -264,10 +266,12 @@ describe("Certificate", () => {
       const cert = jk.Certificate.from_asn1(data);
       cert.ob.tbsCertificate.issuer.value[0][0].value = Buffer.from("123");
       assert.equal(
-        cert.verifySelfSigned({
-          time: 1556798940000,
-          dstuHash: algo.hash
-        }),
+        cert.verifySelfSigned(
+          {
+            time: 1556798940000
+          },
+          { Dstu4145le: algo.hash }
+        ),
         false
       );
     });
@@ -276,10 +280,12 @@ describe("Certificate", () => {
       const cert = jk.Certificate.from_asn1(data);
       cert.signatureAlgorithm = "ECDSA";
       assert.equal(
-        cert.verifySelfSigned({
-          time: 1556798940000,
-          dstuHash: algo.hash
-        }),
+        cert.verifySelfSigned(
+          {
+            time: 1556798940000
+          },
+          { Dstu4145le: algo.hash }
+        ),
         false
       );
     });
@@ -287,10 +293,12 @@ describe("Certificate", () => {
     it("should verify validity of self-signed root (fail if expired)", () => {
       const cert = jk.Certificate.from_asn1(data);
       assert.equal(
-        cert.verifySelfSigned({
-          time: 1700000000000,
-          dstuHash: algo.hash
-        }),
+        cert.verifySelfSigned(
+          {
+            time: 1700000000000
+          },
+          { Dstu4145le: algo.hash }
+        ),
         false
       );
     });
@@ -298,10 +306,12 @@ describe("Certificate", () => {
     it("should verify validity of self-signed root (fail if not active yet)", () => {
       const cert = jk.Certificate.from_asn1(data);
       assert.equal(
-        cert.verifySelfSigned({
-          time: 1300000000000,
-          dstuHash: algo.hash
-        }),
+        cert.verifySelfSigned(
+          {
+            time: 1300000000000
+          },
+          { Dstu4145le: algo.hash }
+        ),
         false
       );
     });
@@ -386,16 +396,16 @@ describe("Certificate", () => {
   describe("Generated Cert", () => {
     const curve = jk.std_curve("DSTU_PB_257");
     const priv = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
+      fs.readFileSync(`${__dirname}/data/PRIV1.cer`)
     );
     const privEncE54B = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/KeyE54B.cer`),
+      fs.readFileSync(`${__dirname}/data/KeyE54B.cer`)
     );
     const privEnc6929 = jk.Priv.from_asn1(
       fs.readFileSync(`${__dirname}/data/Key6929.cer`)
     );
     const privEnc40A0 = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
+      fs.readFileSync(`${__dirname}/data/Key40A0.cer`)
     );
 
     it("should generate and self-sign a cert", () => {
@@ -507,7 +517,10 @@ describe("Certificate", () => {
       const cert = jk.Certificate.from_asn1(data);
 
       assert.equal(
-        cert.verifySelfSigned({ time: 1550000000000, dstuHash: algo.hash }),
+        cert.verifySelfSigned(
+          { time: 1550000000000 },
+          { Dstu4145le: algo.hash }
+        ),
         true
       );
     });
