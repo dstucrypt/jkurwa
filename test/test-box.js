@@ -31,8 +31,9 @@ describe("Box", () => {
   const privEnc6929 = jk.Priv.from_asn1(
     fs.readFileSync(`${__dirname}/data/Key6929.cer`)
   );
+  const defaultHash = 'Gost34311';
 
-  const box = new jk.Box({ algo });
+  const box = new jk.Box({ algo, defaultHash });
   const time = 1540236305;
 
   const caList = new jk.models.Message();
@@ -91,7 +92,7 @@ describe("Box", () => {
     });
 
     it("should verify certificate against ca list", async () => {
-      const boxWithCA = new jk.Box({ algo });
+      const boxWithCA = new jk.Box({ algo, defaultHash });
       boxWithCA.loadCAs(caList.as_asn1());
       const { content, pipe } = await boxWithCA.unwrap(p7s);
       assert.equal(pipe.length, 1);
@@ -139,21 +140,21 @@ describe("Box", () => {
     });
 
     it("should throw if loaded key is marked as signature-only", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv, cert });
       const { error } = await boxWithKey.unwrap(p7s);
       assert.equal(error, "ENOKEY");
     });
 
     it("should return error if sender certificate is not found during lookup", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
       const { error } = await boxWithKey.unwrap(p7s);
       assert.equal(error, "ENOCERT");
     });
 
     it("should return ENOKEY if receiver certiviate it not found during lookup", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv: privEncE54B, cert: certE54B });
       boxWithKey.load({ cert: cert6929 });
       const { error } = await boxWithKey.unwrap(p7s);
@@ -161,7 +162,7 @@ describe("Box", () => {
     });
 
     it("should return ENOKEY if encryption certificate found, but has no matching key", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv: privEncE54B, cert: toCert });
       boxWithKey.load({ cert: cert6929 });
       const { error } = await boxWithKey.unwrap(p7s);
@@ -172,7 +173,7 @@ describe("Box", () => {
       /* This test deliberately confuses library by creating serial number
        * collision and supplying matching certificate with wrong key
        * This error is not a part of normal operation. */
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       const wicked6929 = jk.Certificate.from_asn1(cert6929.to_asn1());
       wicked6929.pubkey.point.y.bytes[1] |= 0xff;
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
@@ -185,7 +186,7 @@ describe("Box", () => {
     });
 
     it("should unwrap be okay if right certificate is before wrong one (collision)", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
       boxWithKey.load({ priv: privEncE54B, cert: certE54B });
       boxWithKey.load({ cert: cert6929 });
@@ -195,7 +196,7 @@ describe("Box", () => {
     });
 
     it("should unwrap if both certificates are present", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
       boxWithKey.load({ cert: cert6929 });
       const { content, error } = await boxWithKey.unwrap(p7s);
@@ -213,14 +214,14 @@ describe("Box", () => {
     });
 
     it("should report ENOKEY if loaded key is marked as signature-only", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv, cert });
       const { error } = await boxWithKey.unwrap(p7s);
       assert.equal(error, "ENOKEY");
     });
 
     it("should use sender certificate from transport container", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({ priv: privEnc40A0, cert: toCert });
       const { content, error } = await boxWithKey.unwrap(p7s);
       assert.equal(error, null);
@@ -233,7 +234,7 @@ describe("Box", () => {
         { priv: privEnc40A0, cert: toCert },
         { priv: privEncE54B, cert: certE54B }
       ];
-      const boxWithKey = new jk.Box({ algo, keys });
+      const boxWithKey = new jk.Box({ algo, keys, defaultHash });
       const { content, error } = await boxWithKey.unwrap(p7s);
       assert.equal(error, null);
       assert.deepEqual(content, Buffer.from("123"));
@@ -247,7 +248,7 @@ describe("Box", () => {
         { priv: privEnc40A0 },
         { priv: privEncE54B }
       ];
-      const boxWithKey = new jk.Box({ algo, keys });
+      const boxWithKey = new jk.Box({ algo, keys, defaultHash });
       const { content } = await boxWithKey.unwrap(p7s);
       assert.deepEqual(content, Buffer.from("123"));
     });
@@ -261,7 +262,7 @@ describe("Box", () => {
       });
 
       it("should read key material from filesystem", async () => {
-        const boxWithKey = new jk.Box({ algo });
+        const boxWithKey = new jk.Box({ algo, defaultHash });
         boxWithKey.load({ privPath: `${__dirname}/data/Key40A0.cer` });
         boxWithKey.load({
           certPath: `${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`
@@ -271,7 +272,7 @@ describe("Box", () => {
       });
 
       it("should read key material from DER/PEM", async () => {
-        const boxWithKey = new jk.Box({ algo });
+        const boxWithKey = new jk.Box({ algo, defaultHash });
         boxWithKey.load({
           privPath: `${__dirname}/data/STORE_A040.pem`,
           password: "password"
@@ -285,7 +286,7 @@ describe("Box", () => {
     });
 
     it("should read encrypted key from filesystem", async () => {
-      const boxWithKey = new jk.Box({ algo });
+      const boxWithKey = new jk.Box({ algo, defaultHash });
       boxWithKey.load({
         privPem: fs.readFileSync(`${__dirname}/data/Key40A0.pem`)
       });
@@ -312,7 +313,7 @@ describe("Box", () => {
   });
 
   describe("create signature", () => {
-    const boxWithKey = new jk.Box({ algo });
+    const boxWithKey = new jk.Box({ algo, defaultHash });
     boxWithKey.load({ priv, cert });
 
     it("should sign message with signing key", done => {
@@ -348,7 +349,7 @@ describe("Box", () => {
   });
 
   describe("encrypt message", () => {
-    const boxWithKey = new jk.Box({ algo });
+    const boxWithKey = new jk.Box({ algo, defaultHash });
     boxWithKey.load({ priv: privEnc6929, cert: cert6929 });
 
     it("should throw if receipient not specified", async () => {

@@ -10,6 +10,12 @@ function assertEqualSaved(buffer, filename) {
   assert.deepEqual(fs.readFileSync(filename), buffer);
 }
 
+function namedHash(hashFn, name) {
+  hashFn.algo = name;
+  return hashFn;
+}
+
+
 describe("Signed Message", () => {
   const key1 = jk.Priv.from_asn1(
     fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
@@ -20,6 +26,11 @@ describe("Signed Message", () => {
 
   const data = Buffer.from("123");
   const algo = gost89.compat.algos();
+  const hashes = {
+    Gost34311: algo.hash,
+    Dstu4145le: algo.hash,
+  };
+
   const dataHash = algo.hash(data);
   const sign = Buffer.from(
     "a2f0f6927e40a651876548c53052dba0f6240adb5d0bffa23b5ed617c4398a600dd1257022b776eb16290c71de9804600307ecb01a2990c387ab7269dd44d917",
@@ -87,7 +98,7 @@ describe("Signed Message", () => {
       type: "signedData",
       cert,
       dataHash,
-      hash: algo.hash,
+      hash: namedHash(algo.hash, 'Gost34311'),
       signTime: time,
       signer: key1
     });
@@ -100,7 +111,7 @@ describe("Signed Message", () => {
       type: "signedData",
       cert,
       data,
-      hash: algo.hash,
+      hash: namedHash(algo.hash, 'Gost34311'),
       signTime: time,
       signer: key1
     });
@@ -122,7 +133,7 @@ describe("Signed Message", () => {
       type: "signedData",
       cert,
       data,
-      hash: algo.hash,
+      hash: namedHash(algo.hash, 'Gost34311'),
       signTime: time,
       signer: key1
     });
@@ -154,7 +165,7 @@ describe("Signed Message", () => {
     const message = new Message(
       fs.readFileSync(`${__dirname}/data/message.p7`)
     );
-    assert.equal(message.verifyAttrs(algo.hash), true);
+    assert.equal(message.verifyAttrs(hashes), true);
   });
 
   it("should fail attribute check if time is not specified (expired cert)", () => {
@@ -166,7 +177,7 @@ describe("Signed Message", () => {
       signer: key1,
       signTime: lateTime,
     });
-    assert.equal(message.verifyAttrs(algo.hash), false);
+    assert.equal(message.verifyAttrs(hashes), false);
   });
 
   it("should fail attribute check if data does not match digest", () => {
@@ -179,14 +190,14 @@ describe("Signed Message", () => {
       signTime: time,
       signer: key1
     });
-    assert.equal(message.verifyAttrs(algo.hash), false);
+    assert.equal(message.verifyAttrs(hashes), false);
   });
 
   it("should pass verification", () => {
     const message = new Message(
       fs.readFileSync(`${__dirname}/data/message.p7`)
     );
-    assert.equal(message.verify(algo.hash), true);
+    assert.equal(message.verify(hashes), true);
   });
 
   it("should fail verification if cert does not match", () => {
@@ -198,7 +209,7 @@ describe("Signed Message", () => {
       signTime: time,
       signer: key1
     });
-    assert.equal(message.verify(algo.hash), false);
+    assert.equal(message.verify(hashes), false);
   });
 
   it("should encrypt and serialize message", () => {
