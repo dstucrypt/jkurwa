@@ -32,23 +32,21 @@ Sister libraries:
 
 * https://github.com/dstucrypt/ukurwa4145 - DSTU 4145 in Python;
 * https://github.com/dstucrypt/gost89 - GOST cipher, hash, mac, key wrapper and container loader in pure js;
-* https://github.com/dstucrypt/node-gost89 - same, but with native performance bossters (for node only);
-* https://github.com/dstucrypt/em-gost - same as emgost-compiled module (with C source), deprecated;
-* https://github.com/dstucrypt/node-gf2m - Native performance booster for jkurwa (gf2m primitives in C);
 * https://github.com/dstucrypt/python-gost89 - gost hash for python (2 and 3);
+* https://github.com/dstucrypt/jksreader - library to parse java-style key containers used by privatbank;
 * https://github.com/muromec/zozol - dumb ASN.1 parser and serialisator for python with X509 and wicked CMS schemas;
-* https://github.com/dstucrypt/openssl-dstu - patched OpenSSL with DSTU 4145 and GOST family support;
-* https://github.com/dstucrypt/dstu-validator - DSTU signature and certificate validator and parser as HTTP API daemon.
+* https://github.com/dstucrypt/openssl-dstu - patched OpenSSL with DSTU 4145 and GOST family support (outdated, unmaintained).
 
 Demo site: https://dstucrypt.github.io/signerbox2/
 
 Demo apps:
 
-* https://github.com/dstucrypt/agent -- command line utility to sign, encrypt and decrypt tax reports
-* https://github.com/dstucrypt/dstukeys -- web interface with examples of authentication
-* https://github.com/dstucrypt/signerbox2/ -- another web app
+* https://github.com/dstucrypt/agent -- command line utility and daemon service to sign, encrypt and decrypt files;
+* https://github.com/dstucrypt/dstukeys -- web interface with examples of authentication;
+* https://github.com/dstucrypt/signerbox2/ -- another web app;
+* https://github.com/max1gu/e-rro -- cash register app (прогрманий рро).
 
-To cross-verifiy signatures use https://czo.gov.ua/verify
+To cross-verifiy signatures use https://czo.gov.ua/verify .
 
 References
 ----------
