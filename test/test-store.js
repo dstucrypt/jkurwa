@@ -17,17 +17,17 @@ describe("Keycoder", () => {
 
   describe("#parse()", () => {
     it("should parse encrypted key in PEM format", () => {
-      const store = jk.guess_parse(enc);
+      const [store] = jk.guess_parse(enc);
       assert.equal(store.format, "PBES2");
     });
 
     it("should serialize encrypted key to asn1", () => {
-      const store = jk.guess_parse(enc);
+      const [store] = jk.guess_parse(enc);
       assert.deepEqual(pbes2.enc_serialize(store), enc);
     });
 
     it("should serialize encrypted key to PEM", () => {
-      const store = jk.guess_parse(enc);
+      const [store] = jk.guess_parse(enc);
       assert.deepEqual(
         pem.to_pem(pbes2.enc_serialize(store), 'ENCRYPTED PRIVATE KEY'),
         encPem,

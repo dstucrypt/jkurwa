@@ -106,13 +106,17 @@ describe("Certificate", () => {
       assert.deepEqual(info.extension.ipn, {
         EDRPOU: "39292197"
       });
-      assert.equal(info.extension.tsp, "http://acskidd.gov.ua/services/tsp/");
-      assert.equal(info.extension.ocsp, "http://acskidd.gov.ua/services/ocsp/");
-      assert.equal(
-        info.extension.issuers,
-        "http://acskidd.gov.ua/download/certificates/allacskidd.p7b"
-      );
-      assert.equal(info.extension.keyUsage[3], 0xc0); // bin 11
+
+      assert.deepEqual(info.extension.subjectInfoAccess, {
+        id: "tsp",
+        link: "http://acskidd.gov.ua/services/tsp/"
+      });
+      assert.deepEqual(info.extension.authorityInfoAccess, {
+        id: "ocsp",
+        issuers: "http://acskidd.gov.ua/download/certificates/allacskidd.p7b",
+        link: "http://acskidd.gov.ua/services/ocsp/"
+      });
+      assert.deepEqual(info.usage, { sign: true, encrypt: false });
     });
 
     it("should serialize back", () => {
