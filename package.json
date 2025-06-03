@@ -3,7 +3,7 @@
   "version": "1.21.2",
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
   "type": "module",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "browser": {
     "./lib/rand.js": "./lib/rand.browser.js"
   },
@@ -21,7 +21,8 @@
   },
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
-    "cover": "npm run test -- --coverage"
+    "cover": "npm run test -- --coverage",
+    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node"
   },
   "repository": {
     "type": "git",
