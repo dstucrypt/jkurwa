@@ -22,7 +22,7 @@
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "cover": "npm run test -- --coverage",
-    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node"
+    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node  --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89"
   },
   "repository": {
     "type": "git",
