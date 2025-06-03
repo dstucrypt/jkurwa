@@ -1,10 +1,16 @@
-/* eslint-env mocha */
-const gost89 = require("gost89");
-const assert = require("assert");
-const fs = require("fs");
 
-const jk = require("../lib");
-const Message = require("../lib/models/Message");
+/* eslint-env mocha */
+import gost89 from "gost89";
+import assert from "assert";
+import fs from "fs";
+
+import * as jk from "../lib/index.js";
+import Message from "../lib/models/Message.js";
+
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function assertEqualSaved(buffer, filename) {
   assert.deepEqual(fs.readFileSync(filename), buffer);

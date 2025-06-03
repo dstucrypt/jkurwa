@@ -1,8 +1,14 @@
+
 /* eslint-env mocha */
-const gost89 = require("gost89");
-const assert = require("assert");
-const fs = require("fs");
-const jk = require("../lib");
+import gost89 from "gost89";
+import assert from "assert";
+import fs from "fs";
+import * as jk from "../lib";
+
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe("Box", () => {
   const algo = gost89.compat.algos();

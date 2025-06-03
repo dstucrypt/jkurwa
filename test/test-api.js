@@ -1,8 +1,13 @@
 /* eslint-env mocha */
-const assert = require("assert");
-const fs = require("fs");
+import assert from "assert";
+import fs from "fs";
 
-const jk = require("../lib/index.js");
+import * as jk from "../lib/index.js";
+
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const { Field } = jk;
 

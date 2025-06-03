@@ -1,11 +1,18 @@
-/* eslint-env mocha */
-const fs = require('fs');
-const assert = require("assert");
-const algo = require('gost89/lib/compat').algos();
 
-const jk = require("../lib/index.js");
-const pbes2 = require('../lib/spec/pbes.js');
-const pem = require('../lib/util/pem.js');
+/* eslint-env mocha */
+import fs from 'fs';
+import assert from 'assert';
+import { algos } from 'gost89/lib/compat.js';
+const algo = algos();
+
+import * as jk from "../lib/index.js";
+import * as pbes2 from '../lib/spec/pbes.js';
+import * as pem from '../lib/util/pem.js';
+
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
 describe("Keycoder", () => {

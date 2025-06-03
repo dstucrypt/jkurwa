@@ -1,8 +1,8 @@
+
 /* eslint-env mocha */
 /* eslint-disable no-plusplus */
-const assert = require("assert");
-
-const gf2m = require("../lib/gf2m.js");
+import assert from "assert";
+import * as gf2m from "../lib/gf2m.js";
 
 describe("Field", () => {
   describe("#mod", () => {

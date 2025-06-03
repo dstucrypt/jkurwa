@@ -3,6 +3,11 @@ import assert from "assert";
 import fs from "fs";
 import * as jk from "../lib";
 
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 describe("Transport", () => {
   it("should serialize data with headers", () => {
     const encoded = jk.transport.encode(

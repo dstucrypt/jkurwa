@@ -1,48 +1,13 @@
-/* eslint-env mocha */
-/* global window,document,crypto */
+import assert from "assert";
+import * as jk from "../lib/index.js";
+
+const { Field, Priv, Pub } = jk;
+
 const valueHEX =
   "aff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a65890";
 
 const rvHEX =
   "ff3ee09cb429284985849e20de5742e194aa631490f62ba88702505629a60895";
-
-/* eslint-disable no-global-assign, no-unused-expressions */
-try {
-  window.location;
-  document.body;
-} catch (e) {
-  window = {};
-  document = {
-    attachEvent() {}
-  };
-}
-
-try {
-  crypto.getRandomValues;
-} catch (e) {
-  crypto = {
-    // Moch random only for testing purposes.
-    // SHOULD NOT BE USED IN REAL CODE.
-    getRandomValues(buf) {
-      /* eslint-disable no-param-reassign, no-bitwise */
-      for (let i = 0; i < buf.length; i+=1) {
-        buf[i] = Math.random() * 255;
-        buf[i] |= (Math.random() * 255) << 8;
-        buf[i] |= (Math.random() * 255) << 16;
-        buf[i] |= (Math.random() * 255) << 24;
-      }
-      /* eslint-enable no-param-reassign, no-bitwise */
-      return buf;
-    }
-  };
-}
-/* eslint-enable no-global-assign, no-unused-expressions */
-
-const assert = require("assert");
-
-const jk = require("../lib/index.js");
-
-const { Field, Priv, Pub } = jk;
 
 describe("Curve", () => {
   describe("#comp_modulus()", () => {

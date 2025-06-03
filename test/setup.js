@@ -5,3 +5,4 @@ function rng() {
   return NOT_RANDOM_32;
 }
 jest.setMock("crypto", { rng });
+jest.unstable_mockModule("node:crypto", () => ({ default: { rng } }));
