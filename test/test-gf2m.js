@@ -1,5 +1,4 @@
-
-/* eslint-env mocha */
+import { describe, it } from "vitest";
 /* eslint-disable no-plusplus */
 import assert from "assert";
 import * as gf2m from "../lib/gf2m.js";

@@ -1,4 +1,5 @@
 import fs from "fs";
+import assert from "assert";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as jk from "../lib/index.js";

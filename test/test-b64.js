@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+import { describe, it } from "vitest";
 import assert from "assert";
 
 import { b64_encode } from "../lib/util/base64";

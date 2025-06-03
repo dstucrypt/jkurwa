@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+import { describe, it } from "vitest";
 import * as jk from "../lib";
 import { assertEqualSaved } from "./utils.js";
 

@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import gost89 from "gost89";
 import assert from "assert";
 import * as strutil from "../lib/util/str.js";

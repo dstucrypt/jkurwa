@@ -1,3 +1,4 @@
+import { beforeAll, afterAll, describe, it } from "vitest";
 import gost89 from "gost89";
 import assert from "assert";
 import * as jk from "../lib";
@@ -297,27 +298,25 @@ describe("Box", () => {
     const boxWithKey = new jk.Box({ algo });
     boxWithKey.load({ priv, cert });
 
-    it("should sign message with signing key", done => {
-      boxWithKey
+    it("should sign message with signing key", async () => {
+      await boxWithKey
         .pipe(
           Buffer.from("123"),
           [{ op: "sign", time }],
           {}
         )
-        .then(data => assert.deepEqual(data, loadAsset("message.p7")))
-        .then(done);
+        .then(data => assert.deepEqual(data, loadAsset("message.p7")));
     });
 
-    it("should sign message with signing key (async)", done => {
-      boxWithKey
+    it("should sign message with signing key (async)", async () => {
+      await boxWithKey
         .pipe(
           Buffer.from("123"),
           [{ op: "sign", time }]
         )
         .then(data => {
           assert.deepEqual(data, loadAsset("message.p7"));
-        })
-        .then(done);
+        });
     });
   });
 
@@ -337,35 +336,32 @@ describe("Box", () => {
       );
     });
 
-    it("should encrypt message with encryption key", done => {
-      boxWithKey
+    it("should encrypt message with encryption key", async () => {
+      await boxWithKey
         .pipe(
           Buffer.from("123"),
           [{ op: "encrypt", forCert: toCert }]
         )
-        .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")))
-        .then(done);
+        .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")));
     });
 
-    it("should encrypt message with encryption key and recipient passed as PEM", done => {
-      boxWithKey
+    it("should encrypt message with encryption key and recipient passed as PEM", async () => {
+      await boxWithKey
         .pipe(
           Buffer.from("123"),
           [{ op: "encrypt", forCert: toCert.to_pem() }],
           {}
         )
-        .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")))
-        .then(done);
+        .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")));
     });
 
-    it("should encrypt message with encryption key (async)", done => {
-      boxWithKey
+    it("should encrypt message with encryption key (async)", async () => {
+      await boxWithKey
         .pipe(
           Buffer.from("123"),
           [{ op: "encrypt", forCert: toCert }]
         )
-        .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")))
-        .then(done);
+        .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")));
     });
   });
 });

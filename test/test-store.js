@@ -1,4 +1,4 @@
-/* eslint-env mocha */
+import { describe, it } from "vitest";
 import assert from "assert";
 import { algos } from "gost89/lib/compat.js";
 
