@@ -1,7 +1,7 @@
 /* eslint-env mocha */
-const assert = require("assert");
-const fs = require("fs");
-const jk = require("../lib");
+import assert from "assert";
+import fs from "fs";
+import * as jk from "../lib";
 
 describe("Transport", () => {
   it("should serialize data with headers", () => {
