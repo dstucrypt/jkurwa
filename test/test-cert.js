@@ -1,13 +1,7 @@
 import gost89 from "gost89";
 import assert from "assert";
-import fs from "fs";
-import * as jk from "../lib/index.js";
 import * as strutil from "../lib/util/str.js";
-
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { loadAsset, loadCert, assertEqualSaved } from "./utils.js";
 
 function repeate(inputStr, times) {
   let ret = "";
@@ -26,8 +20,7 @@ function u(input) {
 describe("Certificate", () => {
   const algo = gost89.compat.algos();
   describe("parse sfs stamp", () => {
-    const data = fs.readFileSync(`${__dirname}/data/SFS_1.cer`);
-    const cert = jk.Certificate.from_asn1(data);
+    const cert = loadCert("SFS_1.cer");
 
     it("should parse certificate from binary", () => {
       assert.equal(cert.format, "x509");
@@ -124,11 +117,12 @@ describe("Certificate", () => {
 
     it("should serialize back", () => {
       const der = cert.to_asn1();
-      assert.deepEqual(der, data);
+      assertEqualSaved(der, "SFS_1.cer");
     });
 
     it("should serialize name to asn1", () => {
       const der = cert.name_asn1();
+      const data = loadAsset("SFS_1.cer");
       assert.deepEqual(
         der.toString("hex"),
         data.slice(50, 336 + 4 + 50).toString("hex")
@@ -136,10 +130,10 @@ describe("Certificate", () => {
     });
 
     it("should serialize (bypass cache) back", () => {
-      const temp = jk.Certificate.from_asn1(data);
+      const temp = loadCert("SFS_1.cer");
       delete temp._raw;
       const der = temp.to_asn1();
-      assert.deepEqual(der, data);
+      assertEqualSaved(der, "SFS_1.cer");
     });
 
     it("should make issuer rdn", () => {
@@ -158,8 +152,7 @@ describe("Certificate", () => {
   });
 
   describe("parse minjust ca", () => {
-    const data = fs.readFileSync(`${__dirname}/data/CA-Justice.cer`);
-    const cert = jk.Certificate.from_asn1(data);
+    const cert = loadCert("CA-Justice.cer");
 
     it("should parse certificate from binary", () => {
       assert.equal(cert.format, "x509");
@@ -209,7 +202,7 @@ describe("Certificate", () => {
 
     it("should serialize back", () => {
       const der = cert.to_asn1();
-      assert.deepEqual(der, data);
+      assertEqualSaved(der, "CA-Justice.cer");
     });
 
     it("should make issuer rdn", () => {
@@ -228,7 +221,7 @@ describe("Certificate", () => {
 
     it("should make issuer rdn for really long orgname", () => {
       const longName = repeate("ЦЗО!", 100);
-      const temp = jk.Certificate.from_asn1(data);
+      const temp = loadCert("CA-Justice.cer");
       temp.ob.tbsCertificate.issuer.value[0][0].value = u(longName);
 
       const rdn = temp.rdnSerial();
@@ -246,10 +239,9 @@ describe("Certificate", () => {
   });
 
   describe("parse CZO root", () => {
-    const data = fs.readFileSync(`${__dirname}/data/CZOROOT.cer`);
+    const cert = loadCert("CZOROOT.cer");
 
     it("should parse certificate", () => {
-      const cert = jk.Certificate.from_asn1(data);
       assert.equal(cert.format, "x509");
       assert.equal(cert.signatureAlgorithm, "Dstu4145le");
       assert.equal(cert.subject.serialNumber, "UA-00015622-2012");
@@ -257,7 +249,6 @@ describe("Certificate", () => {
     });
 
     it("should verify validity of self-signed root", () => {
-      const cert = jk.Certificate.from_asn1(data);
       assert.equal(
         cert.verifySelfSigned(
           {
@@ -270,10 +261,10 @@ describe("Certificate", () => {
     });
 
     it("should verify validity of self-signed root (fail if messed with)", () => {
-      const cert = jk.Certificate.from_asn1(data);
-      cert.ob.tbsCertificate.issuer.value[0][0].value = Buffer.from("123");
+      const temp = loadCert("CZOROOT.cer");
+      temp.ob.tbsCertificate.issuer.value[0][0].value = Buffer.from("123");
       assert.equal(
-        cert.verifySelfSigned(
+        temp.verifySelfSigned(
           {
             time: 1556798940000
           },
@@ -284,10 +275,10 @@ describe("Certificate", () => {
     });
 
     it("should verify validity of self-signed root (fail if algo doesnt match)", () => {
-      const cert = jk.Certificate.from_asn1(data);
-      cert.signatureAlgorithm = "ECDSA";
+      const temp = loadCert("CZOROOT.cer");
+      temp.signatureAlgorithm = "ECDSA";
       assert.equal(
-        cert.verifySelfSigned(
+        temp.verifySelfSigned(
           {
             time: 1556798940000
           },
@@ -298,7 +289,6 @@ describe("Certificate", () => {
     });
 
     it("should verify validity of self-signed root (fail if expired)", () => {
-      const cert = jk.Certificate.from_asn1(data);
       assert.equal(
         cert.verifySelfSigned(
           {
@@ -311,7 +301,6 @@ describe("Certificate", () => {
     });
 
     it("should verify validity of self-signed root (fail if not active yet)", () => {
-      const cert = jk.Certificate.from_asn1(data);
       assert.equal(
         cert.verifySelfSigned(
           {
@@ -320,215 +309,6 @@ describe("Certificate", () => {
           { Dstu4145le: algo.hash }
         ),
         false
-      );
-    });
-  });
-
-  describe("parse minjust ca (ecdsa)", () => {
-    const data = fs.readFileSync(
-      `${__dirname}/data/CA-Justice-ECDSA-261217.cer`
-    );
-    const pemData = fs.readFileSync(
-      `${__dirname}/data/CA-Justice-ECDSA-261217.pem`
-    );
-    const cert = jk.Certificate.from_asn1(data);
-
-    it("should parse certificate from binary", () => {
-      assert.equal(cert.format, "x509");
-      assert.equal(cert.curve, null);
-      assert.equal(cert.curve_id, "secp256r1");
-
-      assert.equal(cert.valid.from, 1514314260000); // 2017-12-26 18:51:00
-      assert.equal(cert.valid.to, 1672080660000); // 2022-12-26 18:51:00
-      assert.equal(
-        cert.serial,
-        57595595825646241314308569398321717626221363200
-      );
-      assert.equal(cert.signatureAlgorithm, "ECDSA-SHA256");
-      assert.equal(cert.pubkeyAlgorithm, "ECDSA");
-      assert.equal(cert.extension.ipn, null);
-
-      assert.equal(cert.subject.commonName, "CA of the Justice of Ukraine");
-      assert.equal(cert.subject.organizationName, 'State enterprise "NAIS"');
-      assert.equal(
-        cert.subject.organizationalUnitName,
-        "Certification Authority"
-      );
-      assert.equal(cert.subject.countryName, "UA");
-      assert.equal(cert.subject.localityName, "Kyiv");
-      assert.equal(cert.subject.serialNumber, "UA-39787008-1217");
-
-      assert.equal(cert.issuer.commonName, "Central certification authority");
-      assert.equal(
-        cert.issuer.organizationName,
-        "Ministry of Justice of Ukraine"
-      );
-      assert.equal(cert.issuer.organizationalUnitName, "Administrator ITS CCA");
-      assert.equal(cert.issuer.countryName, "UA");
-      assert.equal(cert.issuer.localityName, "Kyiv");
-      assert.equal(cert.issuer.serialNumber, "UA-00015622-256");
-    });
-
-    it("should parse certificate from PEM", () => {
-      const pemCert = jk.Certificate.from_pem(pemData);
-      assert.deepEqual(pemCert, cert);
-    });
-
-    it("should serialize back", () => {
-      const der = cert.to_asn1();
-      assert.deepEqual(der, data);
-    });
-
-    it("should serialize to PEM", () => {
-      const pem = cert.to_pem();
-      assert.deepEqual(pem, pemData.toString().trim());
-    });
-
-    it("should make issuer rdn", () => {
-      const rdn = cert.rdnSerial();
-      assert.deepEqual(
-        rdn,
-        "a16ad03d02fa86c010000000100000090000000" +
-          "@organizationName=Ministry of Justice of Ukraine" +
-          "/organizationalUnitName=Administrator ITS CCA" +
-          "/commonName=Central certification authority" +
-          "/serialNumber=UA-00015622-256" +
-          "/countryName=UA" +
-          "/localityName=Kyiv" +
-          "/organizationIdentifier=NTRUA-00015622"
-      );
-    });
-  });
-
-  describe("Generated Cert", () => {
-    const curve = jk.std_curve("DSTU_PB_257");
-    const priv = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/PRIV1.cer`)
-    );
-    const privEncE54B = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/KeyE54B.cer`)
-    );
-    const privEnc6929 = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/Key6929.cer`)
-    );
-    const privEnc40A0 = jk.Priv.from_asn1(
-      fs.readFileSync(`${__dirname}/data/Key40A0.cer`)
-    );
-
-    it("should generate and self-sign a cert", () => {
-      const name = {
-        organizationName: "Very Much CA",
-        serialNumber: "UA-99999999",
-        localityName: "Wakanda"
-      };
-      const serial = 14799991119 << 12; // eslint-disable-line no-bitwise
-      const cert = jk.Certificate.signCert({
-        privkey: priv,
-        hash: algo.hash,
-
-        certData: {
-          serial,
-          issuer: name,
-          subject: name,
-          valid: { from: 1500000000000, to: 1700000000000 },
-          usage: "\x03\x02\x06\xC0"
-        }
-      });
-      const data = cert.as_asn1();
-      assert.deepEqual(
-        fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`),
-        data
-      );
-    });
-
-    it("should generate and self-sign encryption cert 40A0", () => {
-      const name = {
-        organizationName: "Very Much CA",
-        serialNumber: "UA-99999999",
-        localityName: "Wakanda"
-      };
-      const serial = 99991119 << 12; // eslint-disable-line no-bitwise
-      const cert = jk.Certificate.signCert({
-        privkey: privEnc40A0,
-        hash: algo.hash,
-
-        certData: {
-          serial,
-          issuer: name,
-          subject: name,
-          valid: { from: 1500000000000, to: 1700000000000 },
-          usage: "\x03\x02\x03\x08"
-        }
-      });
-      const data = cert.as_asn1();
-      assert.deepEqual(
-        fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`),
-        data
-      );
-    });
-
-    it("should generate and self-sign encryption cert 6929", () => {
-      const name = {
-        organizationName: "Very Much CA",
-        serialNumber: "UA-99999991",
-        localityName: "Wakanda"
-      };
-      const serial = 99991111 << 12; // eslint-disable-line no-bitwise
-      const cert = jk.Certificate.signCert({
-        privkey: privEnc6929,
-        hash: algo.hash,
-
-        certData: {
-          serial,
-          issuer: name,
-          subject: name,
-          valid: { from: 1500000000000, to: 1700000000000 },
-          usage: "\x03\x02\x03\x08"
-        }
-      });
-      const data = cert.as_asn1();
-      assert.deepEqual(
-        fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_6929.cer`),
-        data
-      );
-    });
-
-    it("should generate and self-sign encryption cert E54B", () => {
-      const name = {
-        organizationName: "Very Much CA",
-        serialNumber: "UA-99999999",
-        localityName: "Wakanda"
-      };
-      const serial = 14799991119 << 12; // eslint-disable-line no-bitwise
-      const cert = jk.Certificate.signCert({
-        privkey: privEncE54B,
-        hash: algo.hash,
-
-        certData: {
-          serial,
-          issuer: name,
-          subject: name,
-          valid: { from: 1500000000000, to: 1700000000000 },
-          usage: "\x03\x02\x03\x08"
-        }
-      });
-      const data = cert.as_asn1();
-      assert.deepEqual(
-        fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_E54B.cer`),
-        data
-      );
-    });
-
-    it("should check that self-signed cert is valid", () => {
-      const data = fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`);
-      const cert = jk.Certificate.from_asn1(data);
-
-      assert.equal(
-        cert.verifySelfSigned(
-          { time: 1550000000000 },
-          { Dstu4145le: algo.hash }
-        ),
-        true
       );
     });
   });

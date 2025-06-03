@@ -1,13 +1,6 @@
-/* eslint-env mocha */
 import assert from "assert";
-import fs from "fs";
-
 import * as jk from "../lib/index.js";
-
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { loadAsset, loadPriv } from "./utils.js";
 
 const { Field } = jk;
 
@@ -22,7 +15,7 @@ describe("API", () => {
   const expectD6929 = new jk.Field(
     "6929ac618d278e5a9aabe5e1daf6e7f21a712cc0451cf91525a20fb1f8dddd63",
     "hex",
-    curve,
+    curve
   );
 
   const expectD431 = new jk.Field(
@@ -60,25 +53,19 @@ describe("API", () => {
     });
 
     it("should read trinominal private key from asn1", () => {
-      const priv = jk.Priv.from_asn1(
-        fs.readFileSync(`${__dirname}/data/Key40A0.cer`)
-      );
+      const priv = loadPriv("Key40A0.cer");
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD), true);
     });
 
     it("should read trinominal private key from pem", () => {
-      const priv = jk.Priv.from_pem(
-        fs.readFileSync(`${__dirname}/data/Key40A0.pem`)
-      );
+      const priv = jk.Priv.from_pem(loadAsset("Key40A0.pem"));
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD), true);
     });
 
     it("should read trinominal private key from asn1 (6929)", () => {
-      const priv = jk.Priv.from_asn1(
-        fs.readFileSync(`${__dirname}/data/Key6929.cer`)
-      );
+      const priv = loadPriv("Key6929.cer");
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD6929), true);
     });
@@ -87,20 +74,14 @@ describe("API", () => {
       const priv = curve.pkey(
         "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
       );
-      assert.deepEqual(
-        fs.readFileSync(`${__dirname}/data/Key40A0.cer`),
-        priv.to_asn1()
-      );
+      assert.deepEqual(loadAsset("Key40A0.cer"), priv.to_asn1());
     });
 
     it("should serialize trinominal private key to pem", () => {
       const priv = curve.pkey(
         "a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
       );
-      assert.deepEqual(
-        priv.to_pem(),
-        fs.readFileSync(`${__dirname}/data/Key40A0.pem`).toString(),
-      );
+      assert.deepEqual(priv.to_pem(), loadAsset("Key40A0.pem").toString());
     });
 
     it("should serialize pentanominal private key to asn1", () => {
@@ -108,16 +89,11 @@ describe("API", () => {
       const priv = curve431.pkey(
         "e54bf3f92a281d02f46ad5637387a8f13c9698816cb440a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d"
       );
-      assert.deepEqual(
-        fs.readFileSync(`${__dirname}/data/KeyE54B.cer`),
-        priv.to_asn1()
-      );
+      assert.deepEqual(loadAsset("KeyE54B.cer"), priv.to_asn1());
     });
 
     it("should read pentanominal private key from asn1", () => {
-      const priv = jk.Priv.from_asn1(
-        fs.readFileSync(`${__dirname}/data/KeyE54B.cer`)
-      );
+      const priv = loadPriv("KeyE54B.cer");
       assert.equal(priv.type, "Priv");
       assert.equal(priv.d.equals(expectD431), true);
     });
@@ -183,7 +159,7 @@ describe("API", () => {
         0x0f1b1e0f,
         0x16010115,
         0x001e091b,
-        0x0a0e1400,
+        0x0a0e1400
       ];
 
       const priv = jk.pkey("DSTU_PB_257", buffer, "buf32");

@@ -1,28 +1,13 @@
-
-/* eslint-env mocha */
 import gost89 from "gost89";
 import assert from "assert";
-import fs from "fs";
+import { loadAsset, loadPriv, loadCert, assertEqualSaved } from "./utils.js";
 
 import * as jk from "../lib/index.js";
 import Message from "../lib/models/Message.js";
 
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-function assertEqualSaved(buffer, filename) {
-  assert.deepEqual(fs.readFileSync(filename), buffer);
-}
-
 describe("Signed Message", () => {
-  const key1 = jk.Priv.from_asn1(
-    fs.readFileSync(`${__dirname}/data/PRIV1.cer`),
-  );
-  const privEnc6929 = jk.Priv.from_asn1(
-    fs.readFileSync(`${__dirname}/data/Key6929.cer`),
-  );
+  const key1 = loadPriv("PRIV1.cer");
+  const privEnc6929 = loadPriv("Key6929.cer");
 
   const data = Buffer.from("123");
   const algo = gost89.compat.algos();
@@ -34,18 +19,10 @@ describe("Signed Message", () => {
   const time = 1540236305;
   const lateTime = 1740236305;
 
-  const cert = jk.Certificate.from_asn1(
-    fs.readFileSync(`${__dirname}/data/SELF_SIGNED1.cer`)
-  );
-  const encCert = jk.Certificate.from_asn1(
-    fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_6929.cer`)
-  );
-  const toCert = jk.Certificate.from_asn1(
-    fs.readFileSync(`${__dirname}/data/SELF_SIGNED_ENC_40A0.cer`)
-  );
-  const otherCert = jk.Certificate.from_asn1(
-    fs.readFileSync(`${__dirname}/data/SFS_1.cer`)
-  );
+  const cert = loadCert("SELF_SIGNED1.cer");
+  const encCert = loadCert("SELF_SIGNED_ENC_6929.cer");
+  const toCert = loadCert("SELF_SIGNED_ENC_40A0.cer");
+  const otherCert = loadCert("SFS_1.cer");
 
   it("should sign data using privkey", () => {
     const message = new Message({
@@ -85,7 +62,7 @@ describe("Signed Message", () => {
       signTime: time,
       signer: key1
     });
-    assertEqualSaved(message.as_asn1(), `${__dirname}/data/message.p7`);
+    assertEqualSaved(message.as_asn1(), "message.p7");
   });
 
   it("should serialize detached sign to asn1 buffer", () => {
@@ -98,7 +75,7 @@ describe("Signed Message", () => {
       signer: key1
     });
 
-    assertEqualSaved(message.as_asn1(), `${__dirname}/data/message_detached.p7`);
+    assertEqualSaved(message.as_asn1(), "message_detached.p7");
   });
 
   it("should serialize to transport format (tax office)", () => {
@@ -112,15 +89,12 @@ describe("Signed Message", () => {
     });
 
     const transport = message.as_transport({
-        EDRPOU: '1234567891',
-        RCV_EMAIL: 'user@tax.mail.com',
-        DOC_TYPE: '3',
+      EDRPOU: "1234567891",
+      RCV_EMAIL: "user@tax.mail.com",
+      DOC_TYPE: "3"
     });
-    assert.equal(
-      transport.slice(0, 14).toString("binary"),
-      "TRANSPORTABLE\0"
-    );
-    assertEqualSaved(transport, `${__dirname}/data/message.transport`)
+    assert.equal(transport.slice(0, 14).toString("binary"), "TRANSPORTABLE\0");
+    assertEqualSaved(transport, "message.transport");
   });
 
   it("should serialize to transport format with headers (tax office)", () => {
@@ -134,20 +108,12 @@ describe("Signed Message", () => {
     });
 
     const transport = message.as_transport();
-    assert.equal(
-      transport.slice(0, 9).toString("binary"),
-      "UA1_SIGN\0"
-    );
-    assertEqualSaved(
-      transport.slice(13),
-      `${__dirname}/data/message.p7`
-    );
+    assert.equal(transport.slice(0, 9).toString("binary"), "UA1_SIGN\0");
+    assertEqualSaved(transport.slice(13), "message.p7");
   });
 
   it("should parse message from asn1 buffer", () => {
-    const message = new Message(
-      fs.readFileSync(`${__dirname}/data/message.p7`)
-    );
+    const message = new Message(loadAsset("message.p7"));
     const [signInfo] = message.wrap.content.signerInfos;
     assert.deepEqual(signInfo.encryptedDigest, sign);
     assert.deepEqual(message.wrap.content.contentInfo.content, data);
@@ -157,9 +123,7 @@ describe("Signed Message", () => {
   });
 
   it("should check digest and signing time against certificate validity range", () => {
-    const message = new Message(
-      fs.readFileSync(`${__dirname}/data/message.p7`)
-    );
+    const message = new Message(loadAsset("message.p7"));
     assert.equal(message.verifyAttrs(algo.hash), true);
   });
 
@@ -170,7 +134,7 @@ describe("Signed Message", () => {
       data,
       hash: algo.hash,
       signer: key1,
-      signTime: lateTime,
+      signTime: lateTime
     });
     assert.equal(message.verifyAttrs(algo.hash), false);
   });
@@ -189,9 +153,7 @@ describe("Signed Message", () => {
   });
 
   it("should pass verification", () => {
-    const message = new Message(
-      fs.readFileSync(`${__dirname}/data/message.p7`)
-    );
+    const message = new Message(loadAsset("message.p7"));
     assert.equal(message.verify(algo.hash), true);
   });
 
@@ -216,10 +178,7 @@ describe("Signed Message", () => {
       crypter: privEnc6929,
       algo
     });
-    assertEqualSaved(
-      message.as_asn1(),
-      `${__dirname}/data/enc_message.p7`
-    );
+    assertEqualSaved(message.as_asn1(), "enc_message.p7");
   });
 
   it("should serialize encrypted message to transport format", () => {
@@ -232,14 +191,8 @@ describe("Signed Message", () => {
       algo
     });
     const transport = message.as_transport();
-    assert.deepEqual(
-      transport.slice(0, 10).toString("binary"),
-      "UA1_CRYPT\0"
-    );
-    assertEqualSaved(
-      transport.slice(0xe),
-      `${__dirname}/data/enc_message.p7`
-    );
+    assert.deepEqual(transport.slice(0, 10).toString("binary"), "UA1_CRYPT\0");
+    assertEqualSaved(transport.slice(0xe), "enc_message.p7");
   });
 
   it("should serialize encrypted message to transport format including cert", () => {
@@ -268,13 +221,10 @@ describe("Signed Message", () => {
     );
     assert.deepEqual(
       transport
-        .slice(0x13 + 0xe + 0x20D, 0x13 + 0xe + 0x20D + 10)
+        .slice(0x13 + 0xe + 0x20d, 0x13 + 0xe + 0x20d + 10)
         .toString("binary"),
       "UA1_CRYPT\0"
     );
-    assertEqualSaved(
-      transport,
-      `${__dirname}/data/enc_message.transport`
-    );
+    assertEqualSaved(transport, "enc_message.transport");
   });
 });
