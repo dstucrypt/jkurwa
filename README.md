@@ -45,6 +45,7 @@ Demo apps:
 * https://github.com/dstucrypt/dstukeys -- web interface with examples of authentication;
 * https://github.com/dstucrypt/signerbox2/ -- another web app;
 * https://github.com/max1gu/e-rro -- cash register app (прогрманий рро).
+* https://github.com/p2p-sys/OpenPRRO -- another cash register app (рро).
 
 To cross-verifiy signatures use https://czo.gov.ua/verify .
 
