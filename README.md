@@ -87,7 +87,7 @@ For direct use in a browser without any module loader:
 npm run build:browser
 ```
 
-Produces `dist/jkurwa.browser.js` (~525 KB, IIFE, ES2020). Include it on the
+Produces `dist/jkurwa.browser.js` (~245 KB minified, IIFE, ES2020). Include it on the
 page and everything shows up under a `jkurwa` global:
 
 ```html
@@ -106,7 +106,7 @@ companion gost89 bundle:
 npm run build:browser:gost89
 ```
 
-Produces `dist/gost89.browser.js` (~88 KB, IIFE) exposing a `gost89` global.
+Produces `dist/gost89.browser.js` (~38 KB minified, IIFE) exposing a `gost89` global.
 Load it **before** `jkurwa.browser.js` and pass it in as `algo`:
 
 ```html

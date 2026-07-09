@@ -37,8 +37,8 @@
     "prepublishOnly": "npm run test",
     "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node --format=esm --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89 --external:@li0ard/kupyna",
     "build:bundle": "esbuild ./lib/index.js --outfile=./dist/index.bundle.js --bundle --platform=node --format=esm --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\"",
-    "build:browser": "esbuild ./lib/index.js --outfile=./dist/jkurwa.browser.js --bundle --platform=browser --format=iife --global-name=jkurwa --inject:./lib/browser-buffer-shim.js",
-    "build:browser:gost89": "esbuild ./node_modules/gost89/index.js --outfile=./dist/gost89.browser.js --bundle --platform=browser --format=iife --global-name=gost89 --define:global=globalThis --inject:./lib/browser-buffer-shim.js"
+    "build:browser": "esbuild ./lib/index.js --outfile=./dist/jkurwa.browser.js --bundle --minify --platform=browser --format=iife --global-name=jkurwa --inject:./lib/browser-buffer-shim.js",
+    "build:browser:gost89": "esbuild ./node_modules/gost89/index.js --outfile=./dist/gost89.browser.js --bundle --minify --platform=browser --format=iife --global-name=gost89 --define:global=globalThis --inject:./lib/browser-buffer-shim.js"
   },
   "repository": {
     "type": "git",

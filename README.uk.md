@@ -87,7 +87,7 @@ const curve = jk.std_curve("DSTU_PB_257");
 npm run build:browser
 ```
 
-Створює `dist/jkurwa.browser.js` (~525 КБ, IIFE, ES2020). Підключіть на
+Створює `dist/jkurwa.browser.js` (~245 КБ, мініфіковано, IIFE, ES2020). Підключіть на
 сторінку — і весь API з'явиться під глобалом `jkurwa`:
 
 ```html
@@ -106,7 +106,7 @@ npm run build:browser
 npm run build:browser:gost89
 ```
 
-Створює `dist/gost89.browser.js` (~88 КБ, IIFE), який експортує глобал
+Створює `dist/gost89.browser.js` (~38 КБ, мініфіковано, IIFE), який експортує глобал
 `gost89`. Підключайте його **перед** `jkurwa.browser.js` і передавайте як
 `algo`:
 
