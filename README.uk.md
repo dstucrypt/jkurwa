@@ -99,6 +99,30 @@ npm run build:browser
 </script>
 ```
 
+Для ГОСТ-хешування / шифрування / старих захищених ГОСТом контейнерів
+ключів зберіть компаньйон-бандл gost89:
+
+```sh
+npm run build:browser:gost89
+```
+
+Створює `dist/gost89.browser.js` (~88 КБ, IIFE), який експортує глобал
+`gost89`. Підключайте його **перед** `jkurwa.browser.js` і передавайте як
+`algo`:
+
+```html
+<script src="./gost89.browser.js"></script>
+<script src="./jkurwa.browser.js"></script>
+<script>
+  const algo = gost89.compat.algos();
+  const priv = jkurwa.pkey("DSTU_PB_257",
+    "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d");
+  const hash = algo.hash(new TextEncoder().encode("hello, world"));
+  const sig  = priv.sign(hash, "le");
+  console.log(priv.pub().verify(hash, sig, "le"));
+</script>
+```
+
 Особливості й обмеження в браузері:
 
 * Джерело випадковості — `globalThis.crypto.getRandomValues`. Web Crypto
@@ -107,12 +131,12 @@ npm run build:browser
 * Файлові завантажувачі (`keyinfo.privPath`, `keyinfo.certPath`) замокані —
   прочитайте байти через `fetch`/`FileReader`/`File.arrayBuffer()` і
   передавайте через `keyBuffers` / `certBuffers`.
-* `gost89` не вбудовано, і браузерної збірки для нього наразі немає — тому
-  ГОСТ-хешування/шифрування та старі захищені ГОСТом контейнери ключів на
-  клієнті недоступні. Хешування Купиною, підпис і перевірка DSTU-4145,
-  парсинг ASN.1/PEM/CMS — усе працює.
-* IIFE не містить CommonJS/AMD-обгортки, лише глобал `jkurwa`. Якщо
-  потрібні tree-shakeable імпорти всередині власного бандлера, беріть
+* Обидва бандли інжектять поліфіл `Buffer` (з userland-пакета `buffer`) в
+  `globalThis`, щоб виклики `Buffer.from(...)` усередині gost89 та jkurwa
+  резолвилися. Якщо сторінка вже визначила `globalThis.Buffer`, шим його
+  не чіпає.
+* IIFE не містить CommonJS/AMD-обгортки, лише глобали `jkurwa` / `gost89`.
+  Якщо потрібні tree-shakeable імпорти всередині власного бандлера, беріть
   ESM-варіант `dist/index.bundle.js` через `type="module"`.
 
 Швидкий старт

@@ -99,6 +99,29 @@ page and everything shows up under a `jkurwa` global:
 </script>
 ```
 
+For GOST hashing / encryption / legacy encrypted key containers, add the
+companion gost89 bundle:
+
+```sh
+npm run build:browser:gost89
+```
+
+Produces `dist/gost89.browser.js` (~88 KB, IIFE) exposing a `gost89` global.
+Load it **before** `jkurwa.browser.js` and pass it in as `algo`:
+
+```html
+<script src="./gost89.browser.js"></script>
+<script src="./jkurwa.browser.js"></script>
+<script>
+  const algo = gost89.compat.algos();
+  const priv = jkurwa.pkey("DSTU_PB_257",
+    "40a0e1400001e091b160101150f1b1e0f1d14130e1c0b07011d120a04120c041d");
+  const hash = algo.hash(new TextEncoder().encode("hello, world"));
+  const sig  = priv.sign(hash, "le");
+  console.log(priv.pub().verify(hash, sig, "le"));
+</script>
+```
+
 Notes and browser-specific caveats:
 
 * The bundle uses `globalThis.crypto.getRandomValues` for randomness, which
@@ -108,13 +131,13 @@ Notes and browser-specific caveats:
 * File-system loaders (`keyinfo.privPath`, `keyinfo.certPath`) are stubbed to
   no-ops — read the bytes via `fetch`/`FileReader`/`File.arrayBuffer()` and
   pass them through `keyBuffers` / `certBuffers` instead.
-* `gost89` is not bundled and there is currently no browser build of it, so
-  GOST-based hashing/encryption and legacy encrypted key containers are not
-  available on the client. Kupyna hashing, DSTU-4145 signature verification
-  and generation, ASN.1/PEM/CMS parsing all work.
-* No CommonJS/AMD wrapper — the IIFE only exposes the `jkurwa` global. Use
-  `type="module"` and `import` the ESM `dist/index.bundle.js` if you need
-  tree-shakeable imports in a bundler pipeline.
+* Both bundles inject a `Buffer` polyfill (via the userland `buffer` package)
+  onto `globalThis` so that `Buffer.from(...)` inside gost89 and jkurwa
+  resolves. If the page already defines `globalThis.Buffer`, the injected
+  shim leaves it alone.
+* No CommonJS/AMD wrapper — the IIFE only exposes the `jkurwa` / `gost89`
+  globals. Use `type="module"` and `import` the ESM `dist/index.bundle.js`
+  if you need tree-shakeable imports in a bundler pipeline.
 
 Quick start
 -----------
