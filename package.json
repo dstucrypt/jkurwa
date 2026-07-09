@@ -4,13 +4,28 @@
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./*"
+  },
+  "files": [
+    "dist",
+    "lib",
+    "README.md",
+    "README.uk.md",
+    "CHANGES.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "browser": {
     "./lib/rand.js": "./lib/rand.browser.js"
   },
   "scripts": {
     "test": "vitest run",
     "cover": "npm run test -- --coverage",
-    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node  --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89 --external:@li0ard/kupyna"
+    "prepublishOnly": "npm run test && npm run build",
+    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node --format=esm --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89 --external:@li0ard/kupyna"
   },
   "repository": {
     "type": "git",
@@ -23,7 +38,7 @@
     "ukraine"
   ],
   "author": "Ilya Petrov",
-  "license": "BSD",
+  "license": "BSD-2-Clause",
   "bugs": {
     "url": "https://github.com/dstucrypt/jkurwa/issues"
   },
