@@ -43,6 +43,42 @@ npm install jkurwa gost89
 is passed in as the `algo` object. It is required for encryption, key-container
 decryption and GOST hashing.
 
+### Standalone bundle (no npm install for consumers)
+
+For quick experiments, vendored copies, or environments where running
+`npm install` for the whole dependency tree is not an option, jkurwa can build
+a single self-contained ESM file:
+
+```sh
+npm run build:bundle
+```
+
+This emits `dist/index.bundle.js` (~440 KB) with every npm dependency inlined —
+`bn.js`, the muromec fork of `asn1.js`, `js-lzma`, `jksreader`, `@li0ard/kupyna`
+and the whole `lib/` tree. Only Node built-ins (`fs`, `node:crypto`, `buffer`)
+stay external.
+
+Copy the file into your project and import it directly:
+
+```js
+import * as jk from "./vendor/jkurwa.bundle.js";
+const curve = jk.std_curve("DSTU_PB_257");
+```
+
+Requirements for the consumer:
+
+* Node ≥ 18.
+* ESM loading — either `"type": "module"` in the consumer's `package.json`, or
+  a `.mjs` extension for the importing file. From CommonJS, use dynamic import:
+  `const jk = await import("./vendor/jkurwa.bundle.js")`.
+* If you use GOST hashing, symmetric encryption or GOST-protected key
+  containers, install `gost89` on the consumer side — it is intentionally not
+  bundled and is still passed in as the `algo` object.
+
+The bundle is **not** produced by `prepare`, so it does not slow down normal
+`npm install`. Regenerate it with `npm run build:bundle` whenever the source
+changes.
+
 Quick start
 -----------
 
