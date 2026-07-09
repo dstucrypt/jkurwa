@@ -1,0 +1,237 @@
+<!doctype html>
+<!--
+  Signing a document in the browser with Box, forcing GOST 34.311-95 for one
+  signature and Kupyna-256 (DSTU 7564:2014) for another.
+
+  Prerequisites — build the two IIFE bundles first:
+
+      npm run build:browser         # -> dist/jkurwa.browser.js
+      npm run build:browser:gost89  # -> dist/gost89.browser.js
+
+  Then serve this directory over http (Web Crypto refuses to run from file://):
+
+      python -m http.server 8000
+      # open http://localhost:8000/examples/browser-box-sign.html
+-->
+<meta charset="utf-8">
+<title>jkurwa in the browser: Box.sign with GOST and Kupyna</title>
+<style>
+  body   { font: 14px/1.4 system-ui, sans-serif; max-width: 720px; margin: 2em auto; padding: 0 1em; }
+  label  { display: block; margin: 0.6em 0 0.2em; }
+  input, button, textarea { font: inherit; }
+  textarea { width: 100%; box-sizing: border-box; }
+  pre    { background: #f4f4f4; padding: 0.8em; overflow: auto; white-space: pre-wrap; }
+  .err   { color: #a00; }
+</style>
+
+<!-- Order matters: gost89 must be on globalThis before jkurwa boots. -->
+<script src="../dist/gost89.browser.js"></script>
+<script src="../dist/jkurwa.browser.js"></script>
+
+<h1>Box.sign() &mdash; GOST + Kupyna, in the browser</h1>
+
+<label>Private-key container (Key-6.dat / PFX / JKS / PBES2)
+  <input type="file" id="keyFile" accept=".dat,.pfx,.p12,.pk8,.jks,.pem,.key">
+</label>
+
+<label>Certificate (optional &mdash; PFX/JKS already carry one)
+  <input type="file" id="certFile" accept=".cer,.crt,.der,.pem">
+</label>
+
+<label>Container password
+  <input type="password" id="pw" placeholder="(leave empty for unprotected keys)">
+</label>
+
+<label>Payload
+  <textarea id="payload" rows="3">Привіт, DSTU 4145!</textarea>
+</label>
+
+<label><input type="checkbox" id="useTsp"> Attach qualified TSA timestamp on the signature
+  <small>(reads TSA URL from the signer certificate's subjectInfoAccess extension;
+  most Ukrainian TSA endpoints don't send CORS headers — proxy or set
+  <code>tspProxy</code> below)</small>
+</label>
+
+<label>Optional CORS-proxy prefix for the TSA URL
+  <input type="text" id="tspProxy" placeholder="e.g. https://my-proxy.example.com/?url=" style="width: 100%;">
+</label>
+
+<button id="go">Sign twice (GOST + Kupyna)</button>
+
+<h2>Result</h2>
+<pre id="out">…</pre>
+
+<script type="module">
+  const $ = (id) => document.getElementById(id);
+  const out = $("out");
+
+  async function readBytes(input) {
+    const file = input.files[0];
+    if (!file) return null;
+    const buf = await file.arrayBuffer();
+    // Wrap in Buffer so jkurwa/asn1 helpers get the Node-style API. The
+    // browser bundle injects the `buffer` polyfill on globalThis.
+    return Buffer.from(new Uint8Array(buf));
+  }
+
+  function hexPreview(u8, n = 24) {
+    return [...u8.slice(0, n)]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join(" ") + (u8.length > n ? " …" : "");
+  }
+
+  async function run() {
+    out.className = "";
+    out.textContent = "working…";
+
+    // 1. Shared algo bundle from the gost89 browser IIFE.
+    const algo = gost89.compat.algos();
+
+    // 2. Read the container bytes. Use `keyBuffers` / `certBuffers` — the
+    //    `privPath` / `certPath` variants are stubbed in the browser bundle.
+    const keyBytes  = await readBytes($("keyFile"));
+    if (!keyBytes)  throw new Error("select a private-key file first");
+    const certBytes = await readBytes($("certFile"));
+
+    // 3. Optional TSP transport. jkurwa calls this with
+    //      (method, url, headers, bodyBuffer, cb)
+    //    and expects `cb(responseBuffer|null)`. We adapt fetch() to that shape.
+    //    NOTE: Ukrainian TSAs usually lack CORS headers — set the CORS-proxy
+    //    prefix in the field above to route the request through your own
+    //    forwarder. On the server side, forward the raw body with
+    //    Content-Type: application/tsp-request and return the raw response.
+    const proxy = $("tspProxy").value.trim();
+    const query = async (method, url, headers, body, cb) => {
+      try {
+        const target = proxy ? proxy + encodeURIComponent(url) : url;
+        const res = await fetch(target, { method, headers, body });
+        if (!res.ok) return cb(null);
+        const buf = new Uint8Array(await res.arrayBuffer());
+        cb(Buffer.from(buf));
+      } catch (e) {
+        console.error("TSP transport failed:", e);
+        cb(null);
+      }
+    };
+
+    // 4. Let Box.load do the format detection. It handles:
+    //      - MeDoc file-header prefix (0x51 …)
+    //      - JKS containers (PrivatBank) via jksreader
+    //      - PBES2 / PFX / IIT Key-6.dat via Priv.from_protected
+    //    …which is a strictly wider net than calling Priv.from_protected yourself.
+    const box = new jkurwa.Box({ algo, query });
+    box.load({
+      keyBuffers:  [keyBytes],
+      certBuffers: certBytes ? [certBytes] : [],
+      password:    $("pw").value,
+    });
+
+    // 5. Pull the signer cert out of the loaded key/cert pool for the report.
+    const signer = box.keyFor("sign");
+    const cert   = signer.cert;
+    if (!cert) throw new Error("no certificate for the signing key — attach one via the second file input");
+
+    // Wrap in Buffer — the Message ASN.1 builder rejects raw Uint8Array payloads.
+    const data = Buffer.from(new TextEncoder().encode($("payload").value));
+
+    // NOTE: opts.time is a Unix epoch **in seconds**, not milliseconds. Omit
+    // it to let jkurwa stamp `Date.now()`; if you need to pin the time,
+    // pass `Math.floor(Date.now() / 1000)`. Passing raw ms lands the
+    // signature ~50k years in the future and every verifier will refuse it
+    // ("сертифікат не чинний за строком дії", code 52).
+
+    // opts.tsp values: "signature" (TSA-stamp the finished signature),
+    // "content" (TSA-stamp the data hash), or "all" (both). "signature" is
+    // what verifiers mean by "кваліфікована позначка часу для підпису".
+    // TSP requires the signer cert to carry a subjectInfoAccess extension —
+    // that's where the TSA URL lives. Bail out early with a clear message
+    // instead of letting box.sign explode on a missing field.
+    let tsp;
+    if ($("useTsp").checked) {
+      if (!cert.extension || !cert.extension.subjectInfoAccess || !cert.extension.subjectInfoAccess.link) {
+        throw new Error("signer cert has no subjectInfoAccess.link — TSP unavailable");
+      }
+      tsp = "signature";
+    }
+
+    // 6a. Sign once with GOST 34.311-95 forced.
+    const gostMsg   = await box.sign(data, null, null, { hash: "gost",   tsp });
+    const gostDer   = gostMsg.as_asn1();
+
+    // 6b. Sign again with Kupyna-256 forced. ("kupyna-384" / "kupyna-512" also accepted.)
+    const kupynaMsg = await box.sign(data, null, null, { hash: "kupyna", tsp });
+    const kupynaDer = kupynaMsg.as_asn1();
+
+    // 6c. Round-trip verify each signature via box.unwrap. This checks:
+    //       - the CMS structure parses back
+    //       - the digest recomputed from the payload matches messageDigest
+    //       - the signerInfo signature verifies over the signed attributes
+    //       - digestEncryptionAlgorithm OID matches the digest OID
+    //     A local unwrap is not the same as czo.gov.ua's audit (no chain / OCSP
+    //     without a CA store), but it catches the "Невірний підпис(35)" class
+    //     of failures before you upload the file anywhere.
+    async function selfVerify(der) {
+      try {
+        const info = await box.unwrap(Buffer.from(der));
+        const first = info.pipe.find(p => p.signed !== undefined) || {};
+        if (info.error) return `FAIL (${info.error})`;
+        if (first.signed !== true) return "FAIL (unsigned pipe)";
+        return "OK";
+      } catch (e) {
+        return `FAIL (${e.message || e})`;
+      }
+    }
+    const gostVerify   = await selfVerify(gostDer);
+    const kupynaVerify = await selfVerify(kupynaDer);
+
+    // 7. Optional: wrap into the tax-office transport envelope.
+    //    Uncomment and fill in real recipient/EDRPOU values to use.
+    //
+    // const transport = kupynaMsg.as_transport({
+    //   EDRPOU: "1234567891",
+    //   RCV_EMAIL: "user@tax.mail.com",
+    //   DOC_TYPE: "3",
+    // });
+
+    const tsaUrl = cert.extension &&
+      cert.extension.subjectInfoAccess &&
+      cert.extension.subjectInfoAccess.link;
+
+    out.textContent = [
+      `signer      : ${cert.subject.commonName || "(no CN)"}`,
+      `serial      : ${cert.serial}`,
+      `TSA URL     : ${tsaUrl || "(cert has no subjectInfoAccess — TSP unavailable)"}`,
+      `TSP mode    : ${tsp || "off"}`,
+      ``,
+      `GOST 34.311 : ${gostDer.length} bytes`,
+      `  head      : ${hexPreview(gostDer)}`,
+      `  verify    : ${gostVerify}`,
+      ``,
+      `Kupyna-256  : ${kupynaDer.length} bytes`,
+      `  head      : ${hexPreview(kupynaDer)}`,
+      `  verify    : ${kupynaVerify}`,
+    ].join("\n");
+
+    // Offer both as downloads.
+    for (const [name, bytes] of [
+      ["signed.gost.p7",   gostDer],
+      ["signed.kupyna.p7", kupynaDer],
+    ]) {
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pkcs7-signature" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.textContent = `download ${name}`;
+      a.style.display = "block";
+      out.appendChild(document.createTextNode("\n"));
+      out.appendChild(a);
+    }
+  }
+
+  $("go").addEventListener("click", () => {
+    run().catch((e) => {
+      out.className = "err";
+      out.textContent = "ERROR: " + (e.stack || e.message || e);
+    });
+  });
+</script>
