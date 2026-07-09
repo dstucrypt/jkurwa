@@ -1,7 +1,7 @@
 import { describe, it } from "vitest";
 import assert from "assert";
 
-import { b64_encode } from "../lib/util/base64";
+import { b64_encode } from "../lib/util/base64.js";
 
 describe("B64", () => {
   describe("b64_encode()", () => {

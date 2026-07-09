@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import * as jk from "../lib";
+import * as jk from "../lib/index.js";
 import { assertEqualSaved } from "./utils.js";
 
 describe("Transport", () => {

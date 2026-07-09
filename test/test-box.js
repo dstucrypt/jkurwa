@@ -1,7 +1,7 @@
 import { beforeAll, afterAll, describe, it } from "vitest";
 import gost89 from "gost89";
 import assert from "assert";
-import * as jk from "../lib";
+import * as jk from "../lib/index.js";
 import { assetPath, loadAsset, loadPriv, loadCert } from "./utils.js";
 
 describe("Box", () => {
