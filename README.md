@@ -147,15 +147,26 @@ Supported formats
   `TRANSPORTABLE` / `UA1_SIGN` transport envelopes.
 * **PKI protocols** — OCSP, TSP (RFC 3161), CMP.
 
-Security notes
---------------
+Security notes & known limitations
+----------------------------------
 
 * jkurwa does **not** guarantee constant-time computation.
 * Signature verification checks the signature against a public key. It does
   **not** validate the X.509 certificate chain unless a CA list is loaded
   (`box.loadCAs(...)`). See the [dstucrypt/agent](https://github.com/dstucrypt/agent)
   readme for details.
+* X.509 parsing is deliberately lenient: version/field consistency (e.g.
+  extensions on a v1 certificate) is not enforced, matching real-world CA
+  output (see `lib/spec/rfc3280.js`).
+* The CMP implementation is partial — only the request/response subset used
+  to fetch certificates from Ukrainian CA endpoints is modelled
+  (see `lib/spec/rfc4210-cmp.js`).
+* The CMS/PKCS#7 dialect follows the tax-office ("wicked") profile, not
+  strict RFC 5652.
 * To cross-verify signatures independently, use <https://czo.gov.ua/verify>.
+
+To report a vulnerability, see [SECURITY.md](./SECURITY.md) — please use
+GitHub private vulnerability reporting rather than public issues.
 
 Sister libraries
 ----------------
