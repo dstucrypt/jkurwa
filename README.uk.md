@@ -10,8 +10,7 @@ PKCS#7 / CMS, які використовують податкова служб�
 Чистий JavaScript, працює в Node.js і в браузері.
 
 [![npm module](https://badge.fury.io/js/jkurwa.svg)](https://www.npmjs.org/package/jkurwa)
-[![Build Status](https://travis-ci.org/dstucrypt/jkurwa.svg?branch=master)](https://travis-ci.org/dstucrypt/jkurwa)
-[![codecov](https://codecov.io/gh/dstucrypt/jkurwa/branch/master/graph/badge.svg)](https://codecov.io/gh/dstucrypt/jkurwa)
+[![test](https://github.com/dstucrypt/jkurwa/actions/workflows/test.yml/badge.svg)](https://github.com/dstucrypt/jkurwa/actions/workflows/test.yml)
 
 ![cej repo je strefa wolna wid Kaczyńskiego](https://raw.githubusercontent.com/muromec/jkurwa/master/kdpv.jpg)
 
