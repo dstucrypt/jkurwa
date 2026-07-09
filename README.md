@@ -79,6 +79,43 @@ The bundle is **not** produced by `prepare`, so it does not slow down normal
 `npm install`. Regenerate it with `npm run build:bundle` whenever the source
 changes.
 
+### Browser bundle (drop-in `<script>` tag)
+
+For direct use in a browser without any module loader:
+
+```sh
+npm run build:browser
+```
+
+Produces `dist/jkurwa.browser.js` (~525 KB, IIFE, ES2020). Include it on the
+page and everything shows up under a `jkurwa` global:
+
+```html
+<script src="./jkurwa.browser.js"></script>
+<script>
+  const curve = jkurwa.std_curve("DSTU_PB_257");
+  const priv = curve.pkey(null, "buf32");
+  console.log("public point:", priv.pub().point);
+</script>
+```
+
+Notes and browser-specific caveats:
+
+* The bundle uses `globalThis.crypto.getRandomValues` for randomness, which
+  requires a **secure context** (HTTPS or `localhost`). Loading over plain
+  `file://` or `http://` some-remote-host disables Web Crypto and any
+  signing/key-generation call will throw.
+* File-system loaders (`keyinfo.privPath`, `keyinfo.certPath`) are stubbed to
+  no-ops — read the bytes via `fetch`/`FileReader`/`File.arrayBuffer()` and
+  pass them through `keyBuffers` / `certBuffers` instead.
+* `gost89` is not bundled and there is currently no browser build of it, so
+  GOST-based hashing/encryption and legacy encrypted key containers are not
+  available on the client. Kupyna hashing, DSTU-4145 signature verification
+  and generation, ASN.1/PEM/CMS parsing all work.
+* No CommonJS/AMD wrapper — the IIFE only exposes the `jkurwa` global. Use
+  `type="module"` and `import` the ESM `dist/index.bundle.js` if you need
+  tree-shakeable imports in a bundler pipeline.
+
 Quick start
 -----------
 

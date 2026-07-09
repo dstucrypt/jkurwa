@@ -79,6 +79,42 @@ const curve = jk.std_curve("DSTU_PB_257");
 `npm install`. Перезбирайте його командою `npm run build:bundle` після кожної
 зміни у джерелах.
 
+### Браузерний бандл (`<script>`-тег без модульного лоадера)
+
+Для прямого використання на сторінці без будь-якого бандлера:
+
+```sh
+npm run build:browser
+```
+
+Створює `dist/jkurwa.browser.js` (~525 КБ, IIFE, ES2020). Підключіть на
+сторінку — і весь API з'явиться під глобалом `jkurwa`:
+
+```html
+<script src="./jkurwa.browser.js"></script>
+<script>
+  const curve = jkurwa.std_curve("DSTU_PB_257");
+  const priv = curve.pkey(null, "buf32");
+  console.log("публічна точка:", priv.pub().point);
+</script>
+```
+
+Особливості й обмеження в браузері:
+
+* Джерело випадковості — `globalThis.crypto.getRandomValues`. Web Crypto
+  доступний лише в **secure context** (HTTPS або `localhost`). На `file://`
+  чи звичайному `http://` виклики підпису й генерації ключа кинуть виняток.
+* Файлові завантажувачі (`keyinfo.privPath`, `keyinfo.certPath`) замокані —
+  прочитайте байти через `fetch`/`FileReader`/`File.arrayBuffer()` і
+  передавайте через `keyBuffers` / `certBuffers`.
+* `gost89` не вбудовано, і браузерної збірки для нього наразі немає — тому
+  ГОСТ-хешування/шифрування та старі захищені ГОСТом контейнери ключів на
+  клієнті недоступні. Хешування Купиною, підпис і перевірка DSTU-4145,
+  парсинг ASN.1/PEM/CMS — усе працює.
+* IIFE не містить CommonJS/AMD-обгортки, лише глобал `jkurwa`. Якщо
+  потрібні tree-shakeable імпорти всередині власного бандлера, беріть
+  ESM-варіант `dist/index.bundle.js` через `type="module"`.
+
 Швидкий старт
 -------------
 
