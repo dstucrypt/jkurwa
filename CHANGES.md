@@ -8,6 +8,16 @@ Notable changes, newest first, grouped by the commit that introduced them
 
 ## 2026-07-10
 
+### Kupyna signer OID fix
+
+- `Message.constructSigned` used to hard-code the legacy `Dstu4145le` OID as
+  the `digestEncryptionAlgorithm` of every signerInfo, even when the message
+  was hashed with Kupyna. Ukrainian verifiers rejected the mismatch as
+  "Невірний підпис(35)". The OID is now paired with the digest via
+  `SIG_FOR_HASH`, always picking the `-pb` variant
+  (`Dstu4145le-Dstu7564-256/384/512-pb`) because jkurwa only supports
+  polynomial-basis curves.
+
 ### Documentation, types & security
 
 - Documented the entire `lib/` with English JSDoc and inline comments — module

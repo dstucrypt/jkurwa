@@ -148,6 +148,27 @@ describe("Kupyna (DSTU 7564:2014)", () => {
       );
     });
 
+    it("pairs the Kupyna digest with the -pb Kupyna DSTU4145 signature OID", () => {
+      // Verifiers reject a Kupyna-hashed signature that advertises the legacy
+      // GOST-only Dstu4145le OID in digestEncryptionAlgorithm ("Невірний
+      // підпис(35)"). jkurwa only supports polynomial-basis curves, so the
+      // -pb variant is always the right choice regardless of the cert's own
+      // signatureAlgorithm.
+      const message = signWith(hash);
+      assert.equal(
+        message.wrap.content.signerInfos[0].digestEncryptionAlgorithm.algorithm,
+        "Dstu4145le-Dstu7564-256-pb"
+      );
+    });
+
+    it("keeps Dstu4145le as the signature OID for GOST 34.311", () => {
+      const message = signWith(gostAlgo.hash);
+      assert.equal(
+        message.wrap.content.signerInfos[0].digestEncryptionAlgorithm.algorithm,
+        "Dstu4145le"
+      );
+    });
+
     it("preserves the Kupyna OID across ASN.1 serialization round-trip", () => {
       const parsed = new Message(signWith(hash).as_asn1());
       assert.equal(parsed.digestAlgo, "Dstu7564-256");
