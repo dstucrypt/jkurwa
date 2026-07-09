@@ -40,6 +40,60 @@ describe("Kupyna (DSTU 7564:2014)", () => {
       assert.equal(kupyna.hash512(Buffer.alloc(0)).length, 64);
       assert.equal(kupyna.hash512.algo, "Dstu7564-512");
     });
+
+    // Official DSTU 7564:2014 vectors for the sequential-byte messages
+    // (00 01 02 ...), as published in the Kupyna paper (IACR ePrint
+    // 2015/885, appendix) and used by Bouncy Castle's DSTU7564Test.
+    const seq = bytes =>
+      Buffer.from(Array.from({ length: bytes }, (_, i) => i & 0xff));
+
+    it("matches the official Kupyna-384 vector for the 760-bit message", () => {
+      assert.equal(
+        kupyna.hash384(seq(95)).toString("hex"),
+        "d9021692d84e5175735654846ba751e6d0ed0fac36dfbc0841287dcb0b5584c7" +
+          "5016c3decc2a6e47c50b2f3811e351b8"
+      );
+    });
+
+    it("matches the official Kupyna-512 empty-string vector", () => {
+      assert.equal(
+        kupyna.hash512(Buffer.alloc(0)).toString("hex"),
+        "656b2f4cd71462388b64a37043ea55dbe445d452aecd46c3298343314ef04019" +
+          "bcfa3f04265a9857f91be91fce197096187ceda78c9c1c021c294a0689198538"
+      );
+    });
+
+    it("matches the official Kupyna-512 vector for the 512-bit message", () => {
+      assert.equal(
+        kupyna.hash512(seq(64)).toString("hex"),
+        "3813e2109118cdfb5a6d5e72f7208dccc80a2dfb3afdfb02f46992b5edbe536b" +
+          "3560dd1d7e29c6f53978af58b444e37ba685c0dd910533ba5d78efffc13de62a"
+      );
+    });
+
+    it("matches the official Kupyna-512 vector for the 1024-bit message", () => {
+      assert.equal(
+        kupyna.hash512(seq(128)).toString("hex"),
+        "76ed1ac28b1d0143013ffa87213b4090b356441263c13e03fa060a8cada32b97" +
+          "9635657f256b15d5fca4a174de029f0b1b4387c878fcc1c00e8705d783fd7ffe"
+      );
+    });
+
+    it("matches the official Kupyna-512 vector for the 2048-bit message", () => {
+      assert.equal(
+        kupyna.hash512(seq(256)).toString("hex"),
+        "0dd03d7350c409cb3c29c25893a0724f6b133fa8b9eb90a64d1a8fa93b565566" +
+          "11eb187d715a956b107e3bfc76482298133a9ce8cbc0bd5e1436a5b197284f7e"
+      );
+    });
+
+    it("matches the official Kupyna-512 vector for the single byte 0xFF", () => {
+      assert.equal(
+        kupyna.hash512(Buffer.from([0xff])).toString("hex"),
+        "871b18cf754b72740307a97b449abeb32b64444cc0d5a4d65830ae5456837a72" +
+          "d8458f12c8f06c98c616abe11897f86263b5cb77c420fb375374bec52b6d0292"
+      );
+    });
   });
 
   describe("OID registration", () => {
