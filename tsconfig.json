@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [],
+    "paths": {
+      "jkurwa": ["./types/index.d.ts"]
+    }
+  },
+  "include": ["types/**/*.d.ts", "test/types/**/*.ts"]
+}

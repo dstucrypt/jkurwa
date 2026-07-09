@@ -4,13 +4,18 @@
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
   "type": "module",
   "main": "dist/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./*": "./*"
   },
   "files": [
     "dist",
     "lib",
+    "types",
     "README.md",
     "README.uk.md",
     "CHANGES.md"
@@ -25,6 +30,7 @@
     "test": "vitest run",
     "cover": "npm run test -- --coverage",
     "lint": "eslint lib test examples",
+    "typecheck": "tsc -p tsconfig.json",
     "format": "prettier --write lib test examples",
     "prepublishOnly": "npm run test && npm run build",
     "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node --format=esm --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89 --external:@li0ard/kupyna"
@@ -53,6 +59,7 @@
     "globals": "^17.7.0",
     "gost89": "^0.1.11",
     "prettier": "^3.9.5",
+    "typescript": "^7.0.2",
     "vite": "^6.3.5",
     "vitest": "^3.2.1"
   },
