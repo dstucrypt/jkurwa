@@ -10,7 +10,7 @@
   "scripts": {
     "test": "vitest run",
     "cover": "npm run test -- --coverage",
-    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node  --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89"
+    "build": "esbuild ./lib/index.js --outdir=./dist/ --bundle --platform=node  --external:asn1.js --external:js-lzma --external:js-sha1 --external:jksreader --external:gost89 --external:@li0ard/kupyna"
   },
   "repository": {
     "type": "git",
@@ -43,6 +43,7 @@
     "vitest": "^3.2.1"
   },
   "dependencies": {
+    "@li0ard/kupyna": "^0.1.4",
     "asn1.js": "muromec/asn1.js",
     "bn.js": ">= 0.14",
     "buffer": ">= 3.0",
