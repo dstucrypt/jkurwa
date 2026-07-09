@@ -15,7 +15,7 @@ const asset = name => new URL(`../test/data/${name}`, import.meta.url);
 const box = new jk.Box({ algo: gost89.compat.algos() });
 box.load({
   priv: jk.Priv.from_asn1(fs.readFileSync(asset("PRIV1.cer"))),
-  cert: jk.Certificate.from_asn1(fs.readFileSync(asset("SELF_SIGNED1.cer"))),
+  cert: jk.Certificate.from_asn1(fs.readFileSync(asset("SELF_SIGNED1.cer")))
 });
 
 // A plain CMS signedData message. The hash is chosen from the signing

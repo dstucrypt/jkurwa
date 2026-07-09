@@ -15,17 +15,20 @@ const asset = name => new URL(`../test/data/${name}`, import.meta.url);
 const algo = gost89.compat.algos();
 
 const senderPriv = jk.Priv.from_asn1(fs.readFileSync(asset("Key6929.cer")));
-const senderCert = jk.Certificate.from_asn1(fs.readFileSync(asset("SELF_SIGNED_ENC_6929.cer")));
+const senderCert = jk.Certificate.from_asn1(
+  fs.readFileSync(asset("SELF_SIGNED_ENC_6929.cer"))
+);
 const recipientPriv = jk.Priv.from_asn1(fs.readFileSync(asset("Key40A0.cer")));
-const recipientCert = jk.Certificate.from_asn1(fs.readFileSync(asset("SELF_SIGNED_ENC_40A0.cer")));
+const recipientCert = jk.Certificate.from_asn1(
+  fs.readFileSync(asset("SELF_SIGNED_ENC_40A0.cer"))
+);
 
 // --- sender ---
 const sender = new jk.Box({ algo });
 sender.load({ priv: senderPriv, cert: senderCert });
-const encrypted = await sender.pipe(
-  Buffer.from("secret message"),
-  [{ op: "encrypt", forCert: recipientCert }]
-);
+const encrypted = await sender.pipe(Buffer.from("secret message"), [
+  { op: "encrypt", forCert: recipientCert }
+]);
 fs.writeFileSync("box-encrypted.p7", encrypted);
 console.log(`wrote box-encrypted.p7 (${encrypted.length} bytes)`);
 

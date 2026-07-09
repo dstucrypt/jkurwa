@@ -27,9 +27,7 @@ describe("Kupyna (DSTU 7564:2014)", () => {
     });
 
     it("matches the official Kupyna-256 vector for the 512-bit message", () => {
-      const message = Buffer.from(
-        Array.from({ length: 64 }, (_, i) => i)
-      );
+      const message = Buffer.from(Array.from({ length: 64 }, (_, i) => i));
       assert.equal(
         hash(message).toString("hex"),
         "08f4ee6f1be6903b324c4e27990cb24ef69dd58dbe84813ee0a52f6631239875"
@@ -199,13 +197,22 @@ describe("Kupyna (DSTU 7564:2014)", () => {
     it("per-call 'auto' overrides a Box default back to per-cert selection", () => {
       const box = new Box({ algo: gostAlgo, hashMethod: "kupyna" });
       assert.equal(box.resolveSignHash(gostCert, "auto").algo, undefined);
-      assert.equal(box.resolveSignHash(kupynaCert, "auto").algo, "Dstu7564-256");
+      assert.equal(
+        box.resolveSignHash(kupynaCert, "auto").algo,
+        "Dstu7564-256"
+      );
     });
 
     it("accepts size aliases and a raw hash function", () => {
       const box = new Box({ algo: gostAlgo });
-      assert.equal(box.resolveSignHash(gostCert, "kupyna-512").algo, "Dstu7564-512");
-      assert.equal(box.resolveSignHash(gostCert, kupyna.hash384).algo, "Dstu7564-384");
+      assert.equal(
+        box.resolveSignHash(gostCert, "kupyna-512").algo,
+        "Dstu7564-512"
+      );
+      assert.equal(
+        box.resolveSignHash(gostCert, kupyna.hash384).algo,
+        "Dstu7564-384"
+      );
     });
 
     it("accepts a custom tagged hash function at Box and per-call level", () => {

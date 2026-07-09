@@ -300,20 +300,13 @@ describe("Box", () => {
 
     it("should sign message with signing key", async () => {
       await boxWithKey
-        .pipe(
-          Buffer.from("123"),
-          [{ op: "sign", time }],
-          {}
-        )
+        .pipe(Buffer.from("123"), [{ op: "sign", time }], {})
         .then(data => assert.deepEqual(data, loadAsset("message.p7")));
     });
 
     it("should sign message with signing key (async)", async () => {
       await boxWithKey
-        .pipe(
-          Buffer.from("123"),
-          [{ op: "sign", time }]
-        )
+        .pipe(Buffer.from("123"), [{ op: "sign", time }])
         .then(data => {
           assert.deepEqual(data, loadAsset("message.p7"));
         });
@@ -326,22 +319,14 @@ describe("Box", () => {
 
     it("should throw if receipient not specified", async () => {
       assert.rejects(
-        () =>
-          boxWithKey.pipe(
-            Buffer.from("123"),
-            [{ op: "encrypt" }],
-            {}
-          ),
+        () => boxWithKey.pipe(Buffer.from("123"), [{ op: "encrypt" }], {}),
         /No recipient specified for encryption/
       );
     });
 
     it("should encrypt message with encryption key", async () => {
       await boxWithKey
-        .pipe(
-          Buffer.from("123"),
-          [{ op: "encrypt", forCert: toCert }]
-        )
+        .pipe(Buffer.from("123"), [{ op: "encrypt", forCert: toCert }])
         .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")));
     });
 
@@ -357,10 +342,7 @@ describe("Box", () => {
 
     it("should encrypt message with encryption key (async)", async () => {
       await boxWithKey
-        .pipe(
-          Buffer.from("123"),
-          [{ op: "encrypt", forCert: toCert }]
-        )
+        .pipe(Buffer.from("123"), [{ op: "encrypt", forCert: toCert }])
         .then(data => assert.deepEqual(data, loadAsset("enc_message.p7")));
     });
   });

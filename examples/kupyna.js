@@ -23,7 +23,9 @@ console.log("Kupyna-512(''):", kupyna.hash512(Buffer.alloc(0)).toString("hex"));
 
 // --- Signing with Kupyna ---------------------------------------------------
 const priv = jk.Priv.from_asn1(fs.readFileSync(asset("PRIV1.cer")));
-const cert = jk.Certificate.from_asn1(fs.readFileSync(asset("SELF_SIGNED1.cer")));
+const cert = jk.Certificate.from_asn1(
+  fs.readFileSync(asset("SELF_SIGNED1.cer"))
+);
 
 const message = new jk.models.Message({
   type: "signedData",
@@ -31,7 +33,7 @@ const message = new jk.models.Message({
   data: Buffer.from("Signed with Kupyna"),
   hash, // <- pass the Kupyna hash instead of gost89's algo.hash
   signTime: Math.floor(Date.now() / 1000),
-  signer: priv,
+  signer: priv
 });
 
 console.log(
