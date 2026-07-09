@@ -1,0 +1,8 @@
+# Test fixtures have exact bytes and are matched/parsed byte-for-byte.
+# Extensions map cleanly to content type; pin each so core.autocrlf never
+# rewrites line endings (which breaks the assertions on Windows checkouts).
+*.cer        binary
+*.dat        binary
+*.p7         binary
+*.transport  binary
+*.pem        text eol=lf
