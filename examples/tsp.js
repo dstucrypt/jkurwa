@@ -3,7 +3,6 @@ var rfc3161 = require("../lib/spec/rfc3161-tsp");
 var Certificate = require("../lib/models/Certificate");
 var http = require("http");
 var url = require("url");
-var gost89 = require("gost89");
 
 function loadCert(path) {
   var buf = fs.readFileSync(path);

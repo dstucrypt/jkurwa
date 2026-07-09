@@ -9,7 +9,7 @@ function decrypt_buffer(u8, priv, cert) {
     msg_wrap = new jk.models.Message(data);
   } catch (e) {
     console.log("e", e);
-    throw new Error("Can't read file format");
+    throw new Error("Can't read file format", { cause: e });
   }
 
   if (msg_wrap.type === "signedData") {
