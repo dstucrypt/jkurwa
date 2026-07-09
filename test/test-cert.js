@@ -42,6 +42,7 @@ describe("Certificate", () => {
       assert.equal(cert.valid.to, 1541196000000); // UTCTime 2018-11-02 22:00:00 UTC
       assert.equal(
         cert.serial,
+        // eslint-disable-next-line no-loss-of-precision
         295234990915418097076372072606219913778474207744
       );
       assert.equal(cert.signatureAlgorithm, "Dstu4145le");
@@ -174,6 +175,7 @@ describe("Certificate", () => {
       assert.equal(cert.valid.to, 1608300000000); // UTCTime 2018-11-02 22:00:00 UTC
       assert.equal(
         cert.serial,
+        // eslint-disable-next-line no-loss-of-precision
         274130962303897476041362771173503318330938753024
       );
       assert.equal(cert.signatureAlgorithm, "Dstu4145le");

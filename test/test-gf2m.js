@@ -51,7 +51,6 @@ describe("gf2m", () => {
       "should compute inverted value of %d to be %d on m=3",
       (a, expectedValue) => {
         // Setup
-        const m = 3;
         const p = new Uint32Array([0xb]); // x^3 + x + 1
         let ret = new Uint32Array(1);
 
@@ -94,14 +93,9 @@ describe("gf2m", () => {
 
     it("should return inverted value for known PB_191 value", () => {
       const valueA = new Uint32Array(base_pb_191);
-      const expectA = new Uint32Array(base_pb_191);
       const valueP = new Uint32Array(modulo_pb_191);
 
-      const expect = new Uint32Array([
-        588100965, 4266588766, 614862865, 900202323, 3844403428, 685512842
-      ]);
       const ret = new Uint32Array(6);
-      const ret2 = new Uint32Array(6);
 
       let didThrow = false;
       try {

@@ -1,14 +1,10 @@
 import { describe, it } from "vitest";
-import gost89 from "gost89";
 import assert from "assert";
 import * as jk from "../lib/index.js";
 import { loadAsset, loadCert, assertEqualSaved } from "./utils.js";
 
 describe("Certificate", () => {
-  const algo = gost89.compat.algos();
-
   describe("parse minjust ca (ecdsa)", () => {
-    const data = loadAsset("CA-Justice-ECDSA-261217.cer");
     const pemData = loadAsset("CA-Justice-ECDSA-261217.pem");
     const cert = loadCert("CA-Justice-ECDSA-261217.cer");
 
@@ -21,6 +17,7 @@ describe("Certificate", () => {
       assert.equal(cert.valid.to, 1672080660000); // 2022-12-26 18:51:00
       assert.equal(
         cert.serial,
+        // eslint-disable-next-line no-loss-of-precision
         57595595825646241314308569398321717626221363200
       );
       assert.equal(cert.signatureAlgorithm, "ECDSA-SHA256");

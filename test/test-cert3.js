@@ -8,7 +8,6 @@ describe("Certificate", () => {
   const algo = gost89.compat.algos();
 
   describe("Generated Cert", () => {
-    const curve = jk.std_curve("DSTU_PB_257");
     const priv = loadPriv("PRIV1.cer");
     const privEncE54B = loadPriv("KeyE54B.cer");
     const privEnc6929 = loadPriv("Key6929.cer");

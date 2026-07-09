@@ -63,7 +63,7 @@ describe("Box", () => {
     });
 
     it("should return certificate but warn its unverified", async () => {
-      const { content, pipe } = await box.unwrap(p7s);
+      const { pipe } = await box.unwrap(p7s);
       assert.equal(pipe.length, 1);
       const [signed] = pipe;
       assert.equal(signed.signed, true);
@@ -78,7 +78,7 @@ describe("Box", () => {
     it("should verify certificate against ca list", async () => {
       const boxWithCA = new jk.Box({ algo });
       boxWithCA.loadCAs(caList.as_asn1());
-      const { content, pipe } = await boxWithCA.unwrap(p7s);
+      const { pipe } = await boxWithCA.unwrap(p7s);
       assert.equal(pipe.length, 1);
       const [signed] = pipe;
       assert.equal(signed.signed, true);
