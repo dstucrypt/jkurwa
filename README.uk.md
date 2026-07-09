@@ -203,7 +203,7 @@ await box.sign(data, null, null, { hash: "gost" }); // перевизначит�
 Ліцензія
 --------
 
-BSD. Автор оригіналу: Ilya Petrov.
+Ліцензія [BSD 2-Clause](./LICENSE). Автор оригіналу: Ilya Petrov.
 
 Бонус
 -----

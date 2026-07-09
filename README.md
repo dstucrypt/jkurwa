@@ -203,7 +203,7 @@ References
 License
 -------
 
-BSD. Original author: Ilya Petrov.
+[BSD 2-Clause License](./LICENSE). Original author: Ilya Petrov.
 
 Bonus
 -----
