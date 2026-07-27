@@ -28,15 +28,15 @@ describe("Certificate", () => {
       assert.equal(cert.curve.m, 257);
       assert.deepEqual(Array.from(cert.curve.mod_bits), [257, 12, 0]);
       assert.deepEqual(Array.from(cert.pk_data), [
-        "0x2c157a5f",
-        "0x17857f3c",
-        "0xee0ce4a5",
-        "0xbf03a3b",
-        "0xcb31f667",
-        "0x71224a5",
-        "0x31401ac",
-        "0xcae8dae1",
-        "0x1"
+        0x2c157a5f,
+        0x17857f3c,
+        0xee0ce4a5,
+        0xbf03a3b,
+        0xcb31f667,
+        0x71224a5,
+        0x31401ac,
+        0xcae8dae1,
+        0x1
       ]);
       assert.equal(cert.valid.from, 1478124000000); // UTCTime 2016-11-02 22:00:00 UTC
       assert.equal(cert.valid.to, 1541196000000); // UTCTime 2018-11-02 22:00:00 UTC
@@ -160,15 +160,15 @@ describe("Certificate", () => {
       assert.equal(cert.curve.m, 257);
       assert.deepEqual(Array.from(cert.curve.mod_bits), [257, 12, 0]);
       assert.deepEqual(Array.from(cert.pk_data), [
-        "0xb59265f0",
-        "0xaaf792b8",
-        "0xdda16518",
-        "0x286cb42b",
-        "0x3e1be80f",
-        "0x5751c3ac",
-        "0xe579a40",
-        "0x5002f847",
-        "0x1"
+        0xb59265f0,
+        0xaaf792b8,
+        0xdda16518,
+        0x286cb42b,
+        0x3e1be80f,
+        0x5751c3ac,
+        0xe579a40,
+        0x5002f847,
+        0x1
       ]);
       assert.equal(cert.valid.from, 1450447200000); // 2015-12-18 14:00:00
       assert.equal(cert.valid.to, 1608300000000); // UTCTime 2018-11-02 22:00:00 UTC
