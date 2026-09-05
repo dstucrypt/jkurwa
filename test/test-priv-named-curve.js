@@ -55,6 +55,18 @@ function namedCurveKey() {
   return seq(int0, seq(oid(OID_DSTU4145_LE), seq(oid(OID_CURVE_PB257))), octstr(d));
 }
 
+function namedCurveKeyWithDkeKey() {
+  // Same shape as issued by CA software in the wild (e.g. monobank / ДПС
+  // КЕП containers): the named-curve OID is accompanied by an extra
+  // 64-byte octet string (labelled ДКЕ by such tooling) alongside it,
+  // instead of being the sole element of the curve choice. 138 bytes total.
+  const dke = Buffer.alloc(64, 0x11);
+  const params = seq(oid(OID_CURVE_PB257), octstr(dke));
+  const algorithm = seq(oid(OID_DSTU4145_LE), params);
+  const d = Buffer.alloc(32, 0x22);
+  return seq(int0, algorithm, octstr(d));
+}
+
 describe("Priv.from_asn1 with named curve", () => {
   it("parses a key that references the curve by OID", () => {
     const priv = jk.Priv.from_asn1(namedCurveKey());
@@ -67,5 +79,14 @@ describe("Priv.from_asn1 with named curve", () => {
     assert.equal(store.format, "privkeys");
     assert.equal(store.keys.length, 1);
     assert.equal(store.keys[0].type, "Priv");
+  });
+
+  it("parses a CA-shaped named-curve key carrying a DKE alongside the OID", () => {
+    const key = namedCurveKeyWithDkeKey();
+    assert.equal(key.length, 138);
+
+    const priv = jk.Priv.from_asn1(key);
+    assert.equal(priv.type, "Priv");
+    assert.ok(priv.curve.equals(jk.std_curve("DSTU_PB_257")));
   });
 });
