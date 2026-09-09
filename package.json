@@ -30,7 +30,7 @@
   "homepage": "https://github.com/dstucrypt/jkurwa/",
   "devDependencies": {
     "codecov": "^3.8.1",
-    "eslint": "^5.9.0",
+    "eslint": "^10.10.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-prettier": "^4.2.0",
     "eslint-plugin-import": "^2.14.0",
