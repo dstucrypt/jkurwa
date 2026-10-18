@@ -20,3 +20,10 @@ API changes
 - `Message` records and verifies the actual digest algorithm instead of
   assuming Gost34311, including in the signing-certificate-v2 attribute.
 - Timestamp requests carry the digest algorithm that produced the imprint.
+
+# v1.23.1
+
+- Fix: a SignedData naming a digest algorithm that the Box's `algo.hashes` map
+  does not implement now fails verification (`ESIGN` from `box.unwrap()`)
+  instead of raising an exception.  Signing still raises when no implementation
+  is configured, because no signature can be produced in that case.
