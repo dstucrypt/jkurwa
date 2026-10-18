@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-labelledby="t desc">
+<title id="t">KALYNA - the 512-bit berry</title>
+<desc id="desc">A parody poster for DSTU 7624:2014 (Kalyna), with the S-box drawn as a cluster of viburnum berries.</desc>
+<defs>
+  <radialGradient id="sky" cx="50%" cy="45%" r="75%">
+    <stop offset="0" stop-color="#0a4fa8"/>
+    <stop offset="60%" stop-color="#063a7d"/>
+    <stop offset="100%" stop-color="#031d3f"/>
+  </radialGradient>
+  <radialGradient id="berry" cx="34%" cy="28%" r="72%">
+    <stop offset="0" stop-color="#ff8a8a"/>
+    <stop offset="38%" stop-color="#e01e37"/>
+    <stop offset="78%" stop-color="#a30f24"/>
+    <stop offset="100%" stop-color="#5c0012"/>
+  </radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffe680"/>
+    <stop offset="45%" stop-color="#ffd400"/>
+    <stop offset="100%" stop-color="#e0a800"/>
+  </linearGradient>
+  <linearGradient id="redband" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8a0018"/>
+    <stop offset="50%" stop-color="#c8102e"/>
+    <stop offset="100%" stop-color="#8a0018"/>
+  </linearGradient>
+  <pattern id="vysh" width="48" height="26" patternUnits="userSpaceOnUse">
+    <rect width="48" height="26" fill="#f3ecdc"/>
+    <path d="M24 2 L44 13 L24 24 L4 13 Z" fill="none" stroke="#c8102e" stroke-width="3.5"/>
+    <path d="M24 8 L24 18 M16 13 L32 13" stroke="#141414" stroke-width="2.5"/>
+    <circle cx="24" cy="13" r="2.4" fill="#c8102e"/>
+  </pattern>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+    <feColorMatrix in="n" type="saturate" values="0" result="g"/>
+    <feComponentTransfer in="g" result="a"><feFuncA type="linear" slope="0.06"/></feComponentTransfer>
+    <feBlend in="SourceGraphic" in2="a" mode="multiply"/>
+  </filter>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="9"/>
+  </filter>
+</defs>
+<rect width="1200" height="630" fill="url(#sky)"/>
+<g opacity="0.28">
+<path d="M610 315 L1672.5 599.7 L1562.6 865.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L1387.8 1092.8 L1160.0 1267.6 Z" fill="#0a4fa8"/>
+<path d="M610 315 L894.7 1377.5 L610.0 1415.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L325.3 1377.5 L60.0 1267.6 Z" fill="#0a4fa8"/>
+<path d="M610 315 L-167.8 1092.8 L-342.6 865.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L-452.5 599.7 L-490.0 315.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L-452.5 30.3 L-342.6 -235.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L-167.8 -462.8 L60.0 -637.6 Z" fill="#0a4fa8"/>
+<path d="M610 315 L325.3 -747.5 L610.0 -785.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L894.7 -747.5 L1160.0 -637.6 Z" fill="#0a4fa8"/>
+<path d="M610 315 L1387.8 -462.8 L1562.6 -235.0 Z" fill="#0a4fa8"/>
+<path d="M610 315 L1672.5 30.3 L1710.0 315.0 Z" fill="#0a4fa8"/>
+</g>
+<rect x="0" y="0" width="1200" height="26" fill="url(#vysh)"/>
+<rect x="0" y="604" width="1200" height="26" fill="url(#vysh)"/>
+<g filter="url(#grain)">
+<g fill="#1f6b3a" opacity="0.95">
+<path d="M150 156 C 240 86, 330 96, 370 156 C 310 166, 230 186, 150 156 Z"/>
+<path d="M420 456 C 340 536, 250 526, 190 466 C 260 446, 340 436, 420 456 Z"/>
+</g>
+<path d="M300 486 C 290 566, 320 606, 340 636" stroke="#3b2a1a" stroke-width="9" fill="none" stroke-linecap="round"/>
+<circle cx="168.0" cy="174.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="155.0" cy="159.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="168.0" y="181.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">A8</text>
+<circle cx="256.0" cy="174.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="243.0" cy="159.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="256.0" y="181.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">43</text>
+<circle cx="344.0" cy="174.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="331.0" cy="159.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="344.0" y="181.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">5F</text>
+<circle cx="432.0" cy="174.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="419.0" cy="159.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="432.0" y="181.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">06</text>
+<circle cx="168.0" cy="262.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="155.0" cy="247.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="168.0" y="269.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">6B</text>
+<circle cx="256.0" cy="262.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="243.0" cy="247.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="256.0" y="269.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">75</text>
+<circle cx="344.0" cy="262.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="331.0" cy="247.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="344.0" y="269.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">6C</text>
+<circle cx="432.0" cy="262.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="419.0" cy="247.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="432.0" y="269.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">41</text>
+<circle cx="168.0" cy="350.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="155.0" cy="335.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="168.0" y="357.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">82</text>
+<circle cx="256.0" cy="350.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="243.0" cy="335.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="256.0" y="357.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">5B</text>
+<circle cx="344.0" cy="350.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="331.0" cy="335.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="344.0" y="357.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">E5</text>
+<circle cx="432.0" cy="350.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="419.0" cy="335.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="432.0" y="357.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">61</text>
+<circle cx="168.0" cy="438.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="155.0" cy="423.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="168.0" y="445.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">24</text>
+<circle cx="256.0" cy="438.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="243.0" cy="423.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="256.0" y="445.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">2C</text>
+<circle cx="344.0" cy="438.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="331.0" cy="423.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="344.0" y="445.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">1A</text>
+<circle cx="432.0" cy="438.0" r="36" fill="url(#berry)" stroke="#3d000c" stroke-width="2"/>
+<ellipse cx="419.0" cy="423.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
+<text x="432.0" y="445.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">1B</text>
+</g>
+<text x="300" y="505" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="17" letter-spacing="3" fill="#ffd400">S-BOX (EDIBLE)</text>
+<g filter="url(#grain)">
+<text x="610" y="88" font-family="DejaVu Sans Mono, monospace" font-size="17" letter-spacing="4" fill="#9fc4ff">МІНІСТЕРСТВО КРИПТОГРАФІЇ УКРАЇНИ</text>
+<text x="610" y="116" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="3" fill="#7fa8e8">DSTU 7624:2014 · ДСТУ 7624:2014</text>
+<text x="614" y="244" font-family="DejaVu Sans, Impact, sans-serif" font-size="128" font-weight="900" fill="#020d1f" opacity="0.55" letter-spacing="2">КАЛИНА</text>
+<text x="610" y="240" font-family="DejaVu Sans, Impact, sans-serif" font-size="128" font-weight="900" fill="url(#gold)" letter-spacing="2">КАЛИНА</text>
+<text x="610" y="292" font-family="DejaVu Sans, sans-serif" font-size="34" font-weight="bold" letter-spacing="16" fill="#ffffff">K A L Y N A</text>
+<g transform="translate(620, 330)">
+<rect x="0" y="0" width="190" height="78" rx="6" fill="#c8102e" stroke="#ffd400" stroke-width="4"/>
+<text x="95" y="58" text-anchor="middle" font-family="DejaVu Sans, Impact, sans-serif" font-size="62" font-weight="900" fill="#ffffff">512</text>
+</g>
+<text x="830" y="356" font-family="DejaVu Sans, sans-serif" font-size="30" font-weight="bold" letter-spacing="2" fill="#ffd400">BIT BLOCK</text>
+<text x="830" y="386" font-family="DejaVu Sans, sans-serif" font-size="20" letter-spacing="1" fill="#cfe2ff">THE BERRY THAT BITES BACK</text>
+<rect x="610" y="415" width="10" height="10" fill="#ffd400" transform="rotate(45 615 420)"/>
+<text x="636" y="432" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="900" fill="#ffffff">18</text>
+<text x="684" y="431" font-family="DejaVu Sans Mono, monospace" font-size="16" letter-spacing="1.5" fill="#bcd6ff">ROUNDS, NO SHORTCUTS</text>
+<rect x="610" y="449" width="10" height="10" fill="#ffd400" transform="rotate(45 615 454)"/>
+<text x="636" y="466" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="900" fill="#ffffff">0</text>
+<text x="669" y="465" font-family="DejaVu Sans Mono, monospace" font-size="16" letter-spacing="1.5" fill="#bcd6ff">BACKDOORS, NO APOLOGIES</text>
+<rect x="610" y="483" width="10" height="10" fill="#ffd400" transform="rotate(45 615 488)"/>
+<text x="636" y="500" font-family="DejaVu Sans, sans-serif" font-size="23" font-weight="900" fill="#ffffff">100%</text>
+<text x="714" y="499" font-family="DejaVu Sans Mono, monospace" font-size="16" letter-spacing="1.5" fill="#bcd6ff">VIBURNUM</text>
+</g>
+<rect x="0" y="514" width="1200" height="66" fill="url(#redband)" opacity="0.95"/>
+<text x="34" y="542" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="900" letter-spacing="2" fill="#ffffff">УВАГА!</text>
+<text x="140" y="542" font-family="DejaVu Sans, sans-serif" font-size="19" fill="#ffe3e6">May cause sudden patriotism, confusion in Moscow, and an urge to re-audit TLS.</text>
+<text x="34" y="572" font-family="DejaVu Sans Mono, monospace" font-size="14" letter-spacing="1" fill="#ffb3bd">Not approved by anyone. Not audited by your cousin. Not a substitute for a real RNG.</text>
+<text x="1166" y="572" text-anchor="end" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="1" fill="#ffd400">sort by controversial ↓</text>
+</svg>
