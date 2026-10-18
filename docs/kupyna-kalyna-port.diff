@@ -1,0 +1,1077 @@
+diff --git a/CHANGES.md b/CHANGES.md
+index dc46d54..7dab4df 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -4,3 +4,19 @@ API changes
+ 
+ - (breaking change) box.unwrap() is now async and returns a promise to accomodate ocsp checks;
+ - keyPath and certPath in `new Box(opts.keys)` and `box.load()` are deprecated and would be removed soon.
++
++# v1.23.0
++
++- DSTU 7564:2014 (Kupyna) support for message digests and DSTU 4145 signatures.
++  Box now takes `algo.hashes = { "Gost34311": fn, "Dstu7564-256": fn, ... }`
++  and dispatches on the algorithm named inside each SignedData and certificate.
++  The old single `algo.hash` form is still accepted (with a deprecation warning).
++- DSTU 7624:2014 (Kalyna) support in PBES2 key containers: the
++  `PBKDF2-HMAC(Dstu7564mac-256) + Dstu7624-cbc-256` profile is now parsed
++  alongside the legacy GOST profile.  Writing Kalyna containers is not
++  supported yet.
++- Kupyna-flavoured DSTU 4145 curve OIDs (`DSTU_PB_*_KU`) are recognised in
++  key stores.
++- `Message` records and verifies the actual digest algorithm instead of
++  assuming Gost34311, including in the signing-certificate-v2 attribute.
++- Timestamp requests carry the digest algorithm that produced the imprint.
+diff --git a/lib/app/ctx.js b/lib/app/ctx.js
+index 17f8be0..79e920e 100644
+--- a/lib/app/ctx.js
++++ b/lib/app/ctx.js
+@@ -51,6 +51,27 @@ class Box {
+     this.algo = opts.algo || {};
+     this.keys = [];
+ 
++    // The Box dispatches on algorithm names, not on one blessed function.
++    // Resolving the default once here means every internal caller has the same
++    // view of "the hash" and no downstream site has to guess.
++    this.defaultHash = opts.defaultHash || "Gost34311";
++
++    // Backwards compatibility for the old single-function API: promote it into
++    // the name-keyed table so the rest of the class only ever reads
++    // algo.hashes.  Dstu4145le is included because certificate key identifiers
++    // are computed with the same function as the signature in that generation.
++    // Warn once per Box, not once per operation, and only for callers still on
++    // the old API - a caller that already passes a map is not being deprecated.
++    if (!this.algo.hashes && this.algo.hash) {
++      console.warn(
++        "Box: passing a single algo.hash is deprecated. Use algo.hashes = { Gost34311: fn, Dstu4145le: fn, ... }"
++      );
++      this.algo.hashes = {
++        Gost34311: this.algo.hash,
++        Dstu4145le: this.algo.hash
++      };
++    }
++
+     if (opts.keys) {
+       this.loadMaterial(opts.keys);
+     }
+@@ -65,7 +86,8 @@ class Box {
+     return {
+       query: this.query,
+       lookupCA: this.lookupCA.bind(this),
+-      hashFn: this.algo.hash
++      hashFn: this.getHashAlgo(null),
++      hashes: this.algo.hashes
+     };
+   }
+ 
+@@ -260,7 +282,7 @@ class Box {
+ 
+     const ret = cert.verify(
+       { time, usage },
+-      { Dstu4145le: this.algo.hash },
++      this.algo.hashes,
+       this.lookupCA.bind(this)
+     );
+     this.verifiedCache[sidHex] = { ret, ctime: Date.now() };
+@@ -341,12 +363,36 @@ class Box {
+     }
+   }
+ 
++  // Returns a callable hash tagged with the algorithm name it implements.  The
++  // tag travels with the function so downstream code (CertificateRef, Message)
++  // can record the right OID without being told the name a second time.
++  getHashAlgo(name) {
++    const algo = name || this.defaultHash;
++    const impl = this.algo.hashes[algo];
++    if (!impl) {
++      throw new Error("No hash implementation for algorithm " + algo);
++    }
++    const hashFn = data => impl(data);
++    hashFn.algo = algo;
++    return hashFn;
++  }
++
+   async sign(data, role, unusedCert, opts) {
+     const key = this.keyFor("sign", role);
+-    const dataHash = this.algo.hash(data);
++    // Resolve the digest once.  The data digest, the signature digest and the
++    // optional TSP request must all name the same algorithm; deriving the name
++    // here keeps those three call sites from drifting apart.
++    const hashAlgo = opts.hash || this.defaultHash;
++    const hashFn = this.getHashAlgo(hashAlgo);
++    const dataHash = hashFn(data);
+     let tspB;
+     if (useContentTsp(opts.tsp)) {
+-      tspB = await tspService.getStamp(key.cert, dataHash, this.query);
++      tspB = await tspService.getStamp(
++        key.cert,
++        dataHash,
++        hashAlgo,
++        this.query
++      );
+     }
+     const message = new Message({
+       type: "signedData",
+@@ -354,20 +400,25 @@ class Box {
+       data: opts.detached ? null : data,
+       dataHash,
+       signer: key.priv,
+-      hash: this.algo.hash,
++      hash: hashFn,
+       tspB,
+       signTime: opts.time
+     });
+     if (useSignatureTsp(opts.tsp)) {
+-      const signHash = this.algo.hash(message.signature);
+-      tspB = await tspService.getStamp(key.cert, signHash, this.query);
++      const signHash = hashFn(message.signature);
++      tspB = await tspService.getStamp(
++        key.cert,
++        signHash,
++        hashAlgo,
++        this.query
++      );
+       message.addSignatureToken(tspB);
+     }
+ 
+     if (opts.includeChain) {
+       const chain = key.cert.getCompleteChain(this.lookupCA.bind(this));
+       message.addCertRefs(
+-        chain.map(cert => CertificateRef.fromCert(cert, this.algo.hash))
++        chain.map(cert => CertificateRef.fromCert(cert, hashFn))
+       );
+       if (opts.includeChain !== "ref") {
+         message.addCertValues(chain);
+@@ -549,7 +600,7 @@ class Box {
+ 
+         try {
+           signed = msg.verify(
+-            this.algo.hash,
++            this.algo.hashes,
+             lookup,
+             this.lookupCA.bind(this),
+             opts
+diff --git a/lib/models/Certificate.js b/lib/models/Certificate.js
+index a56d828..ba112e9 100644
+--- a/lib/models/Certificate.js
++++ b/lib/models/Certificate.js
+@@ -324,7 +324,7 @@ class Certificate {
+         issuer.extension.subjectKeyIdentifier
+       ) &&
+       this.extension.subjectKeyIdentifier.equals(
+-        this.pubkey.keyid({ hash: hashes.Dstu4145le })
++        this.pubkey.keyid({ hash: hashes[this.signatureAlgorithm] })
+       )
+     );
+   }
+@@ -336,7 +336,7 @@ class Certificate {
+           this.verifyTime(time) &&
+           this.verifySignature(this.pubkey_unpack(), hashes) &&
+           this.pubkey
+-            .keyid({ hash: hashes.Dstu4145le })
++            .keyid({ hash: hashes[this.signatureAlgorithm] })
+             .equals(this.extension.subjectKeyIdentifier) &&
+           this.extension.authorityKeyIdentifier.equals(
+             this.extension.subjectKeyIdentifier
+diff --git a/lib/models/Message.js b/lib/models/Message.js
+index e3be76e..0d0b263 100644
+--- a/lib/models/Message.js
++++ b/lib/models/Message.js
+@@ -24,6 +24,32 @@ function cmp(buf1, buf2) {
+   return xor === 0;
+ }
+ 
++// DSTU 4145 pairs each message digest with a signature algorithm OID.  The OID
++// is written into every signerInfo, so it must be spelled exactly as
++// rfc3280.ALGORITHMS_IDS knows it and must agree with the digest algorithm.
++const SIGNATURE_ALGOS = {
++  Gost34311: "Dstu4145le",
++  "Dstu7564-256": "Dstu4145leWithDstu7564",
++  "Dstu7564-384": "Dstu4145leWithDstu7564",
++  "Dstu7564-512": "Dstu4145leWithDstu7564"
++};
++
++function digestAlgorithmOf(info) {
++  const [digest] = info.digestAlgorithms;
++  if (!digest) {
++    throw new Error("SignedData carries no digest algorithm");
++  }
++  return digest.algorithm;
++}
++
++function hashFnFor(hashes, algorithm) {
++  const hashFn = hashes[algorithm];
++  if (!hashFn) {
++    throw new Error("No hash implementation for digest algorithm " + algorithm);
++  }
++  return hashFn;
++}
++
+ class Attrs {
+   constructor(list) {
+     this.list = list;
+@@ -91,7 +117,7 @@ class SignedAttrs extends Attrs {
+   set signingCertificateV2(value) {
+     this.setAttr(
+       "signingCertificateV2",
+-      certid.SigningCertificateV2.wrap(value.cert.ob, value.hash)
++      certid.SigningCertificateV2.wrap(value.cert.ob, value.hash, value.hashName)
+     );
+   }
+ 
+@@ -237,11 +263,24 @@ class Message {
+     let { signB } = ob;
+     const { tspB, tspTokenB } = ob;
+ 
++    // Normalize the digest name once, at the boundary.  Every later step -
++    // digestAlgorithms, the signing-certificate attribute, mhash - reads this
++    // single value, so there is no second place where the algorithms can drift
++    // apart.  Callers that still pass a bare function get the legacy GOST
++    // default; Box always passes a named hash (see Box.getHashAlgo).
++    const hashAlgo = ob.hash.algo || "Gost34311";
++    const sigAlgo = SIGNATURE_ALGOS[hashAlgo];
++    if (!sigAlgo) {
++      throw new Error(
++        "No signature algorithm for digest algorithm " + hashAlgo
++      );
++    }
++
+     const wrap = {
+       contentType: ob.type,
+       content: {
+         version: 1,
+-        digestAlgorithms: [{ algorithm: "Gost34311" }],
++        digestAlgorithms: [{ algorithm: hashAlgo }],
+         contentInfo: ob.data
+           ? { contentType: "data", content: ob.data }
+           : { contentType: "data" },
+@@ -253,8 +292,8 @@ class Message {
+               type: "issuerAndSerialNumber",
+               value: ob.cert.nameSerial()
+             },
+-            digestAlgorithm: { algorithm: "Gost34311" },
+-            digestEncryptionAlgorithm: { algorithm: "Dstu4145le" },
++            digestAlgorithm: { algorithm: hashAlgo },
++            digestEncryptionAlgorithm: { algorithm: sigAlgo },
+             encryptedDigest: signB
+           }
+         ]
+@@ -266,7 +305,8 @@ class Message {
+     this.parseAttrs();
+     this.pattrs.signingCertificateV2 = {
+       cert: ob.cert,
+-      hash: ob.hash(ob.cert.as_asn1())
++      hash: ob.hash(ob.cert.as_asn1()),
++      hashName: hashAlgo
+     };
+     this.pattrs.contentType = "data";
+     this.pattrs.messageDigest = digestB;
+@@ -280,13 +320,13 @@ class Message {
+     this.saveAttrs();
+ 
+     if (!signB) {
+-      this.addSignature(ob.hash, ob.signer);
++      this.addSignature({ [hashAlgo]: ob.hash }, ob.signer);
+     }
+     this.addSignatureToken(tspTokenB);
+   }
+ 
+-  addSignature(hash_f, signer) {
+-    this.signature = signer.sign(this.mhash(hash_f), "le");
++  addSignature(hashes, signer) {
++    this.signature = signer.sign(this.mhash(hashes), "le");
+     this.saveAttrs();
+   }
+ 
+@@ -357,14 +397,18 @@ class Message {
+     this.parseAttrs();
+   }
+ 
+-  mhash(hash_f) {
++  mhash(hashes) {
++    // The digest algorithm is not an argument: it is already recorded in the
++    // SignedData.  Reading it back here keeps signing and verification on the
++    // same path and makes the map the only thing a caller has to supply.
++    const algorithm = digestAlgorithmOf(this.info);
+     let dataToSign;
+     if (this.attrs) {
+       dataToSign = dstszi2010.Attributes.encode(this.attrs, "der");
+     } else {
+       dataToSign = this.info.contentInfo.content;
+     }
+-    return hash_f(dataToSign);
++    return hashFnFor(hashes, algorithm)(dataToSign);
+   }
+ 
+   parseAttrs() {
+@@ -379,20 +423,20 @@ class Message {
+     }
+   }
+ 
+-  verifyAttrs(hash_f, lookupCert, lookupCA, opts = {}) {
++  verifyAttrs(hashes, lookupCert, lookupCA, opts = {}) {
+     if (!this.attrs) {
+       return true;
+     }
+ 
+     let ok;
+-    ok = this.verifyAttrDigest(this.pattrs.messageDigest, hash_f);
++    ok = this.verifyAttrDigest(this.pattrs.messageDigest, hashes);
+     ok = ok && this.verifySigningTime(this.pattrs.signingTime, lookupCert);
+     if (useContentTsp(opts.tsp)) {
+       ok =
+         ok &&
+         this.verifyTimestampToken(
+           this.pattrs.contentTimeStamp,
+-          hash_f,
++          hashes,
+           lookupCert,
+           lookupCA,
+           "content"
+@@ -403,7 +447,7 @@ class Message {
+         ok &&
+         this.verifyTimestampToken(
+           this.puattrs.timeStampToken,
+-          hash_f,
++          hashes,
+           lookupCert,
+           lookupCA,
+           "signature"
+@@ -413,12 +457,12 @@ class Message {
+     return ok;
+   }
+ 
+-  verifyAttrDigest(dgst, hash_f) {
++  verifyAttrDigest(dgst, hashes) {
+     if (!dgst) {
+       return false;
+     }
+     const dataToSign = this.info.contentInfo.content;
+-    const hashbuf = hash_f(dataToSign);
++    const hashbuf = hashFnFor(hashes, digestAlgorithmOf(this.info))(dataToSign);
+     return cmp(dgst, hashbuf);
+   }
+ 
+@@ -430,11 +474,11 @@ class Message {
+     return time >= x509.valid.from && time <= x509.valid.to;
+   }
+ 
+-  verifyTimestampToken(msg, hash_f, lookupCert, lookupCA, imprintOf) {
++  verifyTimestampToken(msg, hashes, lookupCert, lookupCA, imprintOf) {
+     if (!msg) {
+       return true;
+     }
+-    const isSigned = msg.verify(hash_f, lookupCert, lookupCA);
++    const isSigned = msg.verify(hashes, lookupCert, lookupCA);
+     if (!isSigned) {
+       return false;
+     }
+@@ -443,17 +487,26 @@ class Message {
+       .signer(lookupCert)
+       .verify(
+         { time: token.genTime, usage: "timeStamping" },
+-        { Dstu4145le: hash_f },
++        hashes,
+         lookupCA
+       );
+     if (!signerValid) {
+       return false;
+     }
+ 
+-    if (token.messageImprint.hashAlgorithm.algorithm !== "Gost34311") {
++    // A timestamp token is signed by a third party and may honestly use a
++    // different digest than the message it stamps.  Resolve the algorithm it
++    // claims; if we have no implementation for it, the token cannot be
++    // verified, so reject it rather than pretending Gost34311 was meant.
++    const imprintAlgo = token.messageImprint.hashAlgorithm.algorithm;
++    const imprintHashFn = hashes[imprintAlgo];
++    if (!imprintHashFn) {
+       return false;
+     }
+-    return cmp(token.messageImprint.hashedMessage, hash_f(this[imprintOf]));
++    return cmp(
++      token.messageImprint.hashedMessage,
++      imprintHashFn(this[imprintOf])
++    );
+   }
+ 
+   get signature() {
+@@ -529,10 +582,10 @@ class Message {
+     return ri.value.recipientEncryptedKeys[0].rid;
+   }
+ 
+-  verify(hash_f, lookupCert, lookupCA, opts = {}) {
+-    const hash = this.mhash(hash_f);
++  verify(hashes, lookupCert, lookupCA, opts = {}) {
++    const hash = this.mhash(hashes);
+ 
+-    if (!this.verifyAttrs(hash_f, lookupCert, lookupCA, opts)) {
++    if (!this.verifyAttrs(hashes, lookupCert, lookupCA, opts)) {
+       return false;
+     }
+     return this.signer(lookupCert).pubkey.verify(hash, this.signature, "le");
+diff --git a/lib/models/OcspResponse.js b/lib/models/OcspResponse.js
+index edc275e..a6cd280 100644
+--- a/lib/models/OcspResponse.js
++++ b/lib/models/OcspResponse.js
+@@ -120,7 +120,7 @@ class OcspResponse {
+     const responder = queryFn(responderID.value);
+     const responderOk = responder.verify(
+       { time: status.thisUpdate, usage: "ocspSigning" },
+-      { Dstu4145le: ctx.hashFn },
++      ctx.hashes,
+       ctx.lookupCA
+     );
+     if (!responderOk) {
+diff --git a/lib/services/tsp.js b/lib/services/tsp.js
+index 4fe0533..263d80b 100644
+--- a/lib/services/tsp.js
++++ b/lib/services/tsp.js
+@@ -2,13 +2,16 @@ import rfc3161 from "../spec/rfc3161-tsp";
+ import Certificate from "../models/Certificate";
+ import * as dstszi2010 from "../spec/dstszi2010";
+ 
+-function getStampCb(cert, hashedMessage, query, cb, errorCb) {
++function getStampCb(cert, hashedMessage, hashAlgoName, query, cb, errorCb) {
+   var tsp = rfc3161.TimeStampReq.encode(
+     {
+       version: 1,
+       messageImprint: {
+         hashAlgorithm: {
+-          algorithm: "Gost34311"
++          // A TSA signs the digest it is given, so the request must name the
++          // algorithm that produced hashedMessage.  Kupyna callers cannot rely
++          // on the old hard-coded GOST default.
++          algorithm: hashAlgoName
+         },
+         hashedMessage: hashedMessage
+       }
+@@ -34,9 +37,9 @@ function getStampCb(cert, hashedMessage, query, cb, errorCb) {
+   );
+ }
+ 
+-function getStamp(cert, hashedMessage, query) {
++function getStamp(cert, hashedMessage, hashAlgoName, query) {
+   return new Promise((resolve, reject) =>
+-    getStampCb(cert, hashedMessage, query, resolve, reject)
++    getStampCb(cert, hashedMessage, hashAlgoName, query, resolve, reject)
+   );
+ }
+ 
+diff --git a/lib/spec/dstszi2010.js b/lib/spec/dstszi2010.js
+index b8f17ff..77a68ee 100644
+--- a/lib/spec/dstszi2010.js
++++ b/lib/spec/dstszi2010.js
+@@ -71,6 +71,20 @@ var GOST28147Parameters = asn1.define("GOST28147Parameters", function() {
+   );
+ });
+ 
++/**
++  DSTU 7624:2014 (Kalyna) in CBC mode.
++
++  The only parameter is a 32-byte IV for the 256-bit block cipher.  Unlike the
++  GOST profile there is no DKE s-box here: Kalyna's substitution layer is part
++  of the algorithm, not a negotiable parameter of the container.
++*/
++var DSTU7624CBCParameters = asn1.define(
++  "DSTU7624CBCParameters",
++  function() {
++    this.seq().obj(this.key("iv").octstr());
++  }
++);
++
+ /**
+   http://tools.ietf.org/html/rfc2315#section-6.2
+ 
+@@ -426,7 +440,8 @@ ContentInfo.contentModel = {
+   data: Data
+ };
+ ContentInfo.algoModel = {
+-  "Gost28147-cfb": GOST28147Parameters
++  "Gost28147-cfb": GOST28147Parameters,
++  "Dstu7624cbc-256": DSTU7624CBCParameters
+ };
+ ContentInfo.algoModel.IDS = Object.assign({}, rfc3280.ALGORITHMS_IDS);
+ 
+diff --git a/lib/spec/keystore.js b/lib/spec/keystore.js
+index 70f7658..6576f0e 100644
+--- a/lib/spec/keystore.js
++++ b/lib/spec/keystore.js
+@@ -64,7 +64,21 @@ var CURVES = {
+   "1 2 804 2 1 1 1 1 3 1 1 2 7": "DSTU_PB_307",
+   "1 2 804 2 1 1 1 1 3 1 1 2 8": "DSTU_PB_367",
+   "1 2 804 2 1 1 1 1 3 1 1 2 9": "DSTU_PB_431",
+-  "1 2 840 10045 3 1 7": "secp256r1"
++  "1 2 840 10045 3 1 7": "secp256r1",
++
++  // DSTU 4145 over Kupyna: the same ten curves under the Kupyna arc.  These
++  // names must resolve through standard.js; see the note there about the
++  // curves whose parameters are not bundled.
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 0": "DSTU_PB_163_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 1": "DSTU_PB_167_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 2": "DSTU_PB_173_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 3": "DSTU_PB_179_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 4": "DSTU_PB_191_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 5": "DSTU_PB_233_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 6": "DSTU_PB_257_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 7": "DSTU_PB_307_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 8": "DSTU_PB_367_KU",
++  "1 2 804 2 1 1 1 1 3 6 1 1 2 9": "DSTU_PB_431_KU"
+ };
+ 
+ var Curve = asn1.define("Curve", function() {
+diff --git a/lib/spec/pbes.js b/lib/spec/pbes.js
+index 93b7dcd..b2514ad 100644
+--- a/lib/spec/pbes.js
++++ b/lib/spec/pbes.js
+@@ -57,8 +57,40 @@ var pbes2_parse = function(data) {
+   return [pbes2_parse_asn1(obj)];
+ };
+ 
++// PBES2 wraps two unrelated password-based profiles in the wild:
++//
++//   * the legacy GOST profile - PBKDF2-HMAC(Gost34311) + Gost28147-CFB,
++//     identified by an 8-byte IV and a 64-byte DKE s-box;
++//   * the DSTU profile used by Kupyna/Kalyna key containers -
++//     PBKDF2-HMAC(Dstu7564mac-256) + Dstu7624-CBC with a 32-byte IV.
++//
++// The KDF hash algorithm is the discriminator: it determines which encryption
++// scheme and parameter shape must follow.  The pair is validated together, not
++// field by field - a store claiming Gost34311-hmac with Dstu7624-CBC is not a
++// variant we support, and guessing at it would produce a key that decrypts to
++// garbage long after the container was accepted.
++var PBES2_PROFILES = {
++  "Gost34311-hmac": {
++    algorithm: "Gost28147-cfb",
++    ivLength: 8,
++    readParams(params) {
++      if (params.dke.length !== 64) {
++        throw new Error("S-BOX len: " + params.dke.length);
++      }
++      return { iv: params.iv, sbox: params.dke };
++    }
++  },
++  "Dstu7564mac-256": {
++    algorithm: "Dstu7624cbc-256",
++    ivLength: 32,
++    readParams(params) {
++      return { iv: params.iv };
++    }
++  }
++};
++
+ var pbes2_parse_asn1 = function(asn1) {
+-  var kdf, enc, params, iv, sbox, salt, iter;
++  var kdf, enc, params, salt, iter;
+ 
+   if (asn1.contentEncryptionAlgorithm.algorithm !== "PBES2") {
+     throw new Error(asn1.contentEncryptionAlgorithm.algorithm);
+@@ -70,39 +102,48 @@ var pbes2_parse_asn1 = function(asn1) {
+   if (kdf.id !== "PBKDF2") {
+     throw new Error(kdf.id);
+   }
+-  if (kdf.params.hash.algorithm !== "Gost34311-hmac") {
++
++  salt = kdf.params.salt;
++  iter = kdf.params.cycles;
++  if (salt.length !== 32) {
++    throw new Error("SALT len: " + salt.length);
++  }
++
++  var profile = PBES2_PROFILES[kdf.params.hash.algorithm];
++  if (!profile) {
+     throw new Error("Unknown cipher " + kdf.params.hash.algorithm);
+   }
++
+   enc = asn1.contentEncryptionAlgorithm.parameters.value.encryptionScheme;
+-  if (enc.algorithm !== "Gost28147-cfb") {
+-    throw new Error(enc.algorithm);
++  if (enc.algorithm !== profile.algorithm) {
++    throw new Error(
++      "Cipher " +
++        enc.algorithm +
++        " does not match KDF " +
++        kdf.params.hash.algorithm
++    );
+   }
+   params = enc.parameters.value;
+   if (params === null) {
+     throw new Error("Encryption params not passed");
+   }
+-  iv = params.iv;
+-  sbox = params.dke;
+-  salt = kdf.params.salt;
+-  iter = kdf.params.cycles;
+-
+-  if (iv.length !== 8 || sbox.length !== 64 || salt.length !== 32) {
+-    throw new Error(
+-      "IV len: " +
+-        iv.length +
+-        ", S-BOX len: " +
+-        sbox.length +
+-        ", SALT len: " +
+-        salt.length
+-    );
++  if (params.iv.length !== profile.ivLength) {
++    throw new Error("IV len: " + params.iv.length);
+   }
++
++  const { iv, sbox } = profile.readParams(params);
++
+   return {
+     format: "PBES2",
+     iv: iv,
+     sbox: sbox,
+     salt: salt,
+     iters: iter.toNumber(),
+-    body: asn1.encryptedContent
++    body: asn1.encryptedContent,
++    // The consumers (custom algo.storeload implementations) dispatch on these
++    // two names, so surface the actual algorithms instead of assuming GOST.
++    kdf: kdf.params.hash.algorithm,
++    enc: enc.algorithm
+   };
+ };
+ 
+diff --git a/lib/spec/rfc3280.js b/lib/spec/rfc3280.js
+index 0840dbe..9fe17dd 100644
+--- a/lib/spec/rfc3280.js
++++ b/lib/spec/rfc3280.js
+@@ -19,10 +19,29 @@ export { CRLReason };
+ var ALGORITHMS_IDS = {
+   "1 2 804 2 1 1 1 1 2 1": "Gost34311",
+   "1 2 804 2 1 1 1 1 1 1 3": "Gost28147-cfb",
++
++  // DSTU 7564:2014 (Kupyna). The bare OID and the -256/-384/-512 variants are
++  // distinct identifiers; the mac-* entries are the KMAC mode used as the
++  // PBKDF2 PRF in Kupyna key containers.
++  "1 2 804 2 1 1 1 1 2 2": "Dstu7564",
++  "1 2 804 2 1 1 1 1 2 2 1": "Dstu7564-256",
++  "1 2 804 2 1 1 1 1 2 2 2": "Dstu7564-384",
++  "1 2 804 2 1 1 1 1 2 2 3": "Dstu7564-512",
++  "1 2 804 2 1 1 1 1 2 2 4": "Dstu7564mac-256",
++  "1 2 804 2 1 1 1 1 2 2 5": "Dstu7564mac-384",
++  "1 2 804 2 1 1 1 1 2 2 6": "Dstu7564mac-512",
++
++  // DSTU 7624:2014 (Kalyna) in CBC mode, indexed by block size.
++  "1 2 804 2 1 1 1 1 1 3 5 1": "Dstu7624cbc-128",
++  "1 2 804 2 1 1 1 1 1 3 5 2": "Dstu7624cbc-256",
++  "1 2 804 2 1 1 1 1 1 3 5 3": "Dstu7624cbc-512",
++
+   "1 2 804 2 1 1 1 1 3 4": "dhSinglePass-cofactorDH-gost34311kdf",
+   "1 2 804 2 1 1 1 1 1 1 5": "Gost28147-cfb-wrap",
+   "1 2 804 2 1 1 1 1 1 2": "Gost34311-hmac",
+   "1 2 804 2 1 1 1 1 3 1 1": "Dstu4145le",
++  // DSTU 4145 with Kupyna as the message hash (the "KU" curve family).
++  "1 2 804 2 1 1 1 1 3 6 1 1": "Dstu4145leWithDstu7564",
+   "1 2 840 10045 2 1": "ECDSA",
+   "1 2 840 10045 4 3 2": "ECDSA-SHA256"
+ };
+diff --git a/lib/spec/rfc5035-certid.js b/lib/spec/rfc5035-certid.js
+index 3067e2e..cd4044c 100644
+--- a/lib/spec/rfc5035-certid.js
++++ b/lib/spec/rfc5035-certid.js
+@@ -48,10 +48,15 @@ var SigningCertificateV2 = asn1.define("SigningCertificateV2", function() {
+       .any()
+   );
+ });
+-SigningCertificateV2.wrap = function(cert, hash) {
++// `hashName` is the digest algorithm used to produce `hash`; it must match the
++// message digest algorithm of the enclosing SignedData, otherwise a verifier
++// recomputes the certificate digest with a different function and rejects the
++// attribute.  Gost34311 is the historical default, kept for callers that have
++// not been updated to pass Kupyna variants.
++SigningCertificateV2.wrap = function(cert, hash, hashName) {
+   var idv2 = {
+     hashAlgorithm: {
+-      algorithm: "Gost34311"
++      algorithm: hashName || "Gost34311"
+     },
+     certHash: hash,
+     issuerSerial: {
+diff --git a/lib/standard.js b/lib/standard.js
+index 22f57af..2d9837b 100644
+--- a/lib/standard.js
++++ b/lib/standard.js
+@@ -53,4 +53,23 @@ const DSTU_PB_431 = {
+ 
+ const cache = {};
+ 
+-export { DSTU_PB_257, DSTU_PB_191, DSTU_PB_431, cache };
++// DSTU 4145 over Kupyna ("KU") uses the same curve parameters as the GOST
++// variant; only the accompanying hash OID differs.  Exposing the KU names lets
++// keystore.js resolve the Kupyna curve OIDs without duplicating the tables.
++//
++// Note: only the curves whose parameters actually live in this file get a KU
++// alias.  keystore.js knows the OIDs for all ten curves, but from_id() will
++// throw for the KU names without an entry here.
++const DSTU_PB_191_KU = DSTU_PB_191;
++const DSTU_PB_257_KU = DSTU_PB_257;
++const DSTU_PB_431_KU = DSTU_PB_431;
++
++export {
++  DSTU_PB_257,
++  DSTU_PB_257_KU,
++  DSTU_PB_191,
++  DSTU_PB_191_KU,
++  DSTU_PB_431,
++  DSTU_PB_431_KU,
++  cache
++};
+diff --git a/package.json b/package.json
+index c4b6ca4..bbed261 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "jkurwa",
+-  "version": "1.22.9",
++  "version": "1.23.0",
+   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
+   "type": "module",
+   "main": "dist/index.cjs",
+@@ -30,6 +30,7 @@
+   "homepage": "https://github.com/dstucrypt/jkurwa/",
+   "devDependencies": {
+     "codecov": "^3.8.1",
++    "dstu7564": "^1.1.1",
+     "eslint": "^10.10.0",
+     "eslint-config-airbnb": "^17.1.0",
+     "eslint-config-prettier": "^4.2.0",
+diff --git a/test/data/test-kupyna-czo.p7s b/test/data/test-kupyna-czo.p7s
+new file mode 100644
+index 0000000..0328f62
+Binary files /dev/null and b/test/data/test-kupyna-czo.p7s differ
+diff --git a/test/data/test-t-kupyna.p7s b/test/data/test-t-kupyna.p7s
+new file mode 100644
+index 0000000..b6ac1b2
+Binary files /dev/null and b/test/data/test-t-kupyna.p7s differ
+diff --git a/test/test-czo-kupyna-t.js b/test/test-czo-kupyna-t.js
+new file mode 100644
+index 0000000..670dc52
+--- /dev/null
++++ b/test/test-czo-kupyna-t.js
+@@ -0,0 +1,23 @@
++import { describe, it, expect } from "vitest";
++import { loadAsset, kupynaBox } from "./utils.js";
++
++describe("CZO CAdES-T Dstu7564 (Kupyna)", () => {
++  const p7s = loadAsset("test-t-kupyna.p7s");
++
++  it("unwraps and verifies Kupyna CAdES-T signature", async () => {
++    const box = kupynaBox();
++    const { content, pipe } = await box.unwrap(p7s);
++    expect(content.toString()).toBe("Test\r\n");
++    expect(pipe[0].signed).toBe(true);
++    expect(pipe[0].cert.subject.commonName).toBe("ТЕСТ Тестовий Тест Тестович");
++  });
++
++  it("unwraps with CA verification using test root", async () => {
++    const box = kupynaBox();
++    box.loadCAs(loadAsset("CZO-CA-LIST.p7s"));
++    const { content, pipe } = await box.unwrap(p7s);
++    expect(content.toString()).toBe("Test\r\n");
++    expect(pipe[0].signed).toBe(true);
++    expect(pipe[0].cert.verified).toBe(true);
++  });
++});
+diff --git a/test/test-czo-kupyna.js b/test/test-czo-kupyna.js
+new file mode 100644
+index 0000000..0192f96
+--- /dev/null
++++ b/test/test-czo-kupyna.js
+@@ -0,0 +1,23 @@
++import { describe, it, expect } from "vitest";
++import { loadAsset, kupynaBox } from "./utils.js";
++
++describe("CZO CAdES-BES Dstu7564 (Kupyna)", () => {
++  const p7s = loadAsset("test-kupyna-czo.p7s");
++
++  it("unwraps and verifies Kupyna signature", async () => {
++    const box = kupynaBox();
++    const { content, pipe } = await box.unwrap(p7s);
++    expect(content.toString()).toBe("Test\r\n");
++    expect(pipe[0].signed).toBe(true);
++    expect(pipe[0].cert.subject.commonName).toBe("ТЕСТ Тестовий Тест Тестович");
++  });
++
++  it("unwraps with CA verification using test root", async () => {
++    const box = kupynaBox();
++    box.loadCAs(loadAsset("CZO-CA-LIST.p7s"));
++    const { content, pipe } = await box.unwrap(p7s);
++    expect(content.toString()).toBe("Test\r\n");
++    expect(pipe[0].signed).toBe(true);
++    expect(pipe[0].cert.verified).toBe(true);
++  });
++});
+diff --git a/test/test-kupyna-specs.js b/test/test-kupyna-specs.js
+new file mode 100644
+index 0000000..928cb4d
+--- /dev/null
++++ b/test/test-kupyna-specs.js
+@@ -0,0 +1,165 @@
++import { describe, it, expect } from "vitest";
++import * as jk from "../lib/index.js";
++import { obj_parse } from "../lib/spec/pbes.js";
++import { SigningCertificateV2 } from "../lib/spec/rfc5035-certid.js";
++import { loadCert } from "./utils.js";
++
++// These tests cover the parts of the Kupyna port that the CAdES fixtures do not
++// reach: the PBES2 profile dispatch and the hashAlgorithm recorded inside the
++// signing-certificate-v2 attribute.  They build their inputs in memory, so they
++// stay fast even on the slow riscv64 box the suite normally runs on.
++
++function pbes2Asn1({ kdf, enc, iv, dke, saltLength = 32 }) {
++  return {
++    contentEncryptionAlgorithm: {
++      algorithm: "PBES2",
++      parameters: {
++        type: "params",
++        value: {
++          keyDerivationFunc: {
++            id: "PBKDF2",
++            params: {
++              salt: Buffer.alloc(saltLength),
++              cycles: { toNumber: () => 10000 },
++              hash: { algorithm: kdf }
++            }
++          },
++          encryptionScheme: {
++            algorithm: enc,
++            parameters: {
++              type: "params",
++              value: dke ? { iv, dke } : { iv }
++            }
++          }
++        }
++      }
++    },
++    encryptedContent: Buffer.from("00112233", "hex")
++  };
++}
++
++describe("PBES2 profile dispatch", () => {
++  it("parses the legacy GOST profile", () => {
++    const store = obj_parse(
++      pbes2Asn1({
++        kdf: "Gost34311-hmac",
++        enc: "Gost28147-cfb",
++        iv: Buffer.alloc(8),
++        dke: Buffer.alloc(64)
++      })
++    );
++
++    expect(store.kdf).toBe("Gost34311-hmac");
++    expect(store.enc).toBe("Gost28147-cfb");
++    expect(store.iv.length).toBe(8);
++    expect(store.sbox.length).toBe(64);
++    expect(store.iters).toBe(10000);
++  });
++
++  it("parses the Kupyna/Kalyna profile", () => {
++    const store = obj_parse(
++      pbes2Asn1({
++        kdf: "Dstu7564mac-256",
++        enc: "Dstu7624cbc-256",
++        iv: Buffer.alloc(32)
++      })
++    );
++
++    expect(store.kdf).toBe("Dstu7564mac-256");
++    expect(store.enc).toBe("Dstu7624cbc-256");
++    expect(store.iv.length).toBe(32);
++    expect(store.sbox).toBeUndefined();
++  });
++
++  it("rejects a KDF/cipher pair that belongs to different profiles", () => {
++    expect(() =>
++      obj_parse(
++        pbes2Asn1({
++          kdf: "Gost34311-hmac",
++          enc: "Dstu7624cbc-256",
++          iv: Buffer.alloc(32)
++        })
++      )
++    ).toThrow(/does not match KDF/);
++  });
++
++  it("rejects an unknown KDF", () => {
++    expect(() =>
++      obj_parse(
++        pbes2Asn1({
++          kdf: "Dstu7564mac-512",
++          enc: "Dstu7624cbc-256",
++          iv: Buffer.alloc(32)
++        })
++      )
++    ).toThrow(/Unknown cipher/);
++  });
++
++  it("rejects a wrong IV length", () => {
++    expect(() =>
++      obj_parse(
++        pbes2Asn1({
++          kdf: "Dstu7564mac-256",
++          enc: "Dstu7624cbc-256",
++          iv: Buffer.alloc(16)
++        })
++      )
++    ).toThrow(/IV len/);
++  });
++});
++
++describe("SigningCertificateV2 hashName", () => {
++  const cert = loadCert("CZOROOT.cer");
++
++  it("records the digest that produced the certificate hash", () => {
++    const hash = Buffer.alloc(32, 7);
++    const encoded = SigningCertificateV2.wrap(
++      cert.ob,
++      hash,
++      "Dstu7564-256"
++    );
++    const decoded = SigningCertificateV2.decode(encoded, "der");
++
++    expect(decoded.certs[0].hashAlgorithm.algorithm).toBe("Dstu7564-256");
++  });
++
++  it("keeps the historical GOST default when no name is passed", () => {
++    const encoded = SigningCertificateV2.wrap(cert.ob, Buffer.alloc(32));
++    const decoded = SigningCertificateV2.decode(encoded, "der");
++
++    expect(decoded.certs[0].hashAlgorithm.algorithm).toBe("Gost34311");
++  });
++});
++
++describe("Box algorithm table", () => {
++  it("works when only a hashes map is supplied", () => {
++    const box = new jk.Box({
++      algo: { hashes: { Gost34311: () => Buffer.alloc(32) } }
++    });
++
++    expect(box.getHashAlgo("Gost34311").algo).toBe("Gost34311");
++    expect(() => box.getHashAlgo("Dstu7564-256")).toThrow(
++      /No hash implementation/
++    );
++  });
++
++  it("promotes the legacy single algo.hash into the map", () => {
++    const fn = () => Buffer.alloc(32);
++    const box = new jk.Box({ algo: { hash: fn } });
++
++    expect(box.getHashAlgo("Gost34311").algo).toBe("Gost34311");
++    expect(box.getHashAlgo("Dstu4145le").algo).toBe("Dstu4145le");
++  });
++});
++
++describe("Kupyna curve names", () => {
++  it("resolves the KU aliases whose parameters are bundled", () => {
++    expect(jk.Curve.from_id("DSTU_PB_191_KU").m).toBe(191);
++    expect(jk.Curve.from_id("DSTU_PB_257_KU").m).toBe(257);
++    expect(jk.Curve.from_id("DSTU_PB_431_KU").m).toBe(431);
++  });
++
++  it("throws for a KU name without bundled parameters", () => {
++    expect(() => jk.Curve.from_id("DSTU_PB_163_KU")).toThrow();
++  });
++});
+diff --git a/test/test-sign.js b/test/test-sign.js
+index bc656b0..caded88 100644
+--- a/test/test-sign.js
++++ b/test/test-sign.js
+@@ -12,6 +12,9 @@ describe("Signed Message", () => {
+ 
+   const data = Buffer.from("123");
+   const algo = gost89.compat.algos();
++  // Message verification now takes a name-keyed algorithm map, because the
++  // digest named inside the SignedData selects which implementation to use.
++  const hashes = { Gost34311: algo.hash, Dstu4145le: algo.hash };
+   const dataHash = algo.hash(data);
+   const sign = Buffer.from(
+     "a2f0f6927e40a651876548c53052dba0f6240adb5d0bffa23b5ed617c4398a600dd1257022b776eb16290c71de9804600307ecb01a2990c387ab7269dd44d917",
+@@ -125,7 +128,7 @@ describe("Signed Message", () => {
+ 
+   it("should check digest and signing time against certificate validity range", () => {
+     const message = new Message(loadAsset("message.p7"));
+-    assert.equal(message.verifyAttrs(algo.hash), true);
++    assert.equal(message.verifyAttrs(hashes), true);
+   });
+ 
+   it("should fail attribute check if time is not specified (expired cert)", () => {
+@@ -137,7 +140,7 @@ describe("Signed Message", () => {
+       signer: key1,
+       signTime: lateTime
+     });
+-    assert.equal(message.verifyAttrs(algo.hash), false);
++    assert.equal(message.verifyAttrs(hashes), false);
+   });
+ 
+   it("should fail attribute check if data does not match digest", () => {
+@@ -150,12 +153,12 @@ describe("Signed Message", () => {
+       signTime: time,
+       signer: key1
+     });
+-    assert.equal(message.verifyAttrs(algo.hash), false);
++    assert.equal(message.verifyAttrs(hashes), false);
+   });
+ 
+   it("should pass verification", () => {
+     const message = new Message(loadAsset("message.p7"));
+-    assert.equal(message.verify(algo.hash), true);
++    assert.equal(message.verify(hashes), true);
+   });
+ 
+   it("should fail verification if cert does not match", () => {
+@@ -167,7 +170,7 @@ describe("Signed Message", () => {
+       signTime: time,
+       signer: key1
+     });
+-    assert.equal(message.verify(algo.hash), false);
++    assert.equal(message.verify(hashes), false);
+   });
+ 
+   it("should encrypt and serialize message", () => {
+diff --git a/test/utils.js b/test/utils.js
+index a7f7592..02e20d9 100644
+--- a/test/utils.js
++++ b/test/utils.js
+@@ -4,6 +4,7 @@ import { dirname } from "node:path";
+ import { fileURLToPath } from "node:url";
+ import { expect } from "vitest";
+ import gost89 from "gost89";
++import dstu7564 from "dstu7564";
+ import * as jk from "../lib/index.js";
+ 
+ const __dirname = dirname(fileURLToPath(import.meta.url));
+@@ -35,6 +36,31 @@ export function gostBox() {
+   });
+ }
+ 
++// DSTU 7564-256, used both as the message digest and as the digest inside the
++// signing-certificate attribute of the Kupyna CZO examples.
++export function kupynaHash(data) {
++  return dstu7564.computeHash(32, data);
++}
++
++// A Kupyna-capable Box.  The CZO test containers are signed with the
++// Dstu4145leWithDstu7564 signature OID, while their CA chain is plain GOST, so
++// the map has to carry both families at once.
++export function kupynaBox() {
++  const gostHash = gost89.compat.algos().hash;
++  return new jk.Box({
++    algo: {
++      hash: kupynaHash,
++      hashes: {
++        Gost34311: gostHash,
++        Dstu4145le: gostHash,
++        Dstu4145leWithDstu7564: kupynaHash,
++        Dstu7564: kupynaHash,
++        "Dstu7564-256": kupynaHash
++      }
++    }
++  });
++}
++
+ // Shared verification for the CZO CAdES test examples: load the CA list,
+ // unwrap the container, and assert the standard "Test\r\n" payload with a
+ // verified signature and certificate chain.

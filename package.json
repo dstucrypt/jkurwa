@@ -1,6 +1,6 @@
 {
   "name": "jkurwa",
-  "version": "1.22.9",
+  "version": "1.23.0",
   "description": "Ukrainian national EC cryptography (DSTU-4145) implementaion",
   "type": "module",
   "main": "dist/index.cjs",
@@ -30,6 +30,7 @@
   "homepage": "https://github.com/dstucrypt/jkurwa/",
   "devDependencies": {
     "codecov": "^3.8.1",
+    "dstu7564": "^1.1.1",
     "eslint": "^10.10.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-prettier": "^4.2.0",
