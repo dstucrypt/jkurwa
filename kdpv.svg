@@ -18,6 +18,11 @@
     <stop offset="45%" stop-color="#ffd400"/>
     <stop offset="100%" stop-color="#e0a800"/>
   </linearGradient>
+  <linearGradient id="lens" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2b2b2b"/>
+    <stop offset="45%" stop-color="#0c0c0c"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </linearGradient>
   <linearGradient id="redband" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0" stop-color="#8a0018"/>
     <stop offset="50%" stop-color="#c8102e"/>
@@ -111,10 +116,23 @@
 <ellipse cx="419.0" cy="423.0" rx="12" ry="8" fill="#ffffff" opacity="0.35"/>
 <text x="432.0" y="445.0" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="21" font-weight="bold" fill="#ffe9e9" opacity="0.92">1B</text>
 </g>
+<g transform="translate(300, 294)">
+<g>
+<animateTransform attributeName="transform" type="translate" from="0 -380" to="0 0" dur="1.7s" begin="0.5s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1.61 0.36 1"/>
+<path d="M -18 -16 Q 0 -30 18 -16" stroke="#0a0a0a" stroke-width="10" fill="none" stroke-linecap="round"/>
+<path d="M -128 -20 L -160 -30" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+<path d="M 128 -20 L 160 -30" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+<rect x="-126" y="-36" width="112" height="64" rx="24" fill="url(#lens)" stroke="#0a0a0a" stroke-width="7"/>
+<rect x="14" y="-36" width="112" height="64" rx="24" fill="url(#lens)" stroke="#0a0a0a" stroke-width="7"/>
+<ellipse cx="-96" cy="-14" rx="20" ry="7" fill="#ffffff" opacity="0.30" transform="rotate(-16 -96 -14)"/>
+<ellipse cx="44" cy="-14" rx="20" ry="7" fill="#ffffff" opacity="0.30" transform="rotate(-16 44 -14)"/>
+</g>
+</g>
 <text x="300" y="505" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="17" letter-spacing="3" fill="#ffd400">S-BOX (EDIBLE)</text>
 <g filter="url(#grain)">
-<text x="610" y="88" font-family="DejaVu Sans Mono, monospace" font-size="17" letter-spacing="4" fill="#9fc4ff">МІНІСТЕРСТВО КРИПТОГРАФІЇ УКРАЇНИ</text>
-<text x="610" y="116" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="3" fill="#7fa8e8">DSTU 7624:2014 · ДСТУ 7624:2014</text>
+<text x="610" y="82" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="2.5" fill="#9fc4ff">МІНІСТЕРСТВО КРИПОПОТУЖНОСТЕЙ</text>
+<text x="610" y="104" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="2.5" fill="#9fc4ff">ТА КРІПТОХУЯФІЙ</text>
+<text x="610" y="130" font-family="DejaVu Sans Mono, monospace" font-size="13" letter-spacing="2" fill="#7fa8e8">DSTU 7624:2014 · ДСТУ 7624:2014</text>
 <text x="614" y="244" font-family="DejaVu Sans, Impact, sans-serif" font-size="128" font-weight="900" fill="#020d1f" opacity="0.55" letter-spacing="2">КАЛИНА</text>
 <text x="610" y="240" font-family="DejaVu Sans, Impact, sans-serif" font-size="128" font-weight="900" fill="url(#gold)" letter-spacing="2">КАЛИНА</text>
 <text x="610" y="292" font-family="DejaVu Sans, sans-serif" font-size="34" font-weight="bold" letter-spacing="16" fill="#ffffff">K A L Y N A</text>
@@ -136,7 +154,7 @@
 </g>
 <rect x="0" y="514" width="1200" height="66" fill="url(#redband)" opacity="0.95"/>
 <text x="34" y="542" font-family="DejaVu Sans, sans-serif" font-size="24" font-weight="900" letter-spacing="2" fill="#ffffff">УВАГА!</text>
-<text x="140" y="542" font-family="DejaVu Sans, sans-serif" font-size="19" fill="#ffe3e6">May cause sudden patriotism, confusion in Moscow, and an urge to re-audit TLS.</text>
+<text x="140" y="542" font-family="DejaVu Sans, sans-serif" font-size="19" fill="#ffe3e6">May cause sudden patriotism, a slight inconvenience at Room 641A, and an urge to re-audit TLS.</text>
 <text x="34" y="572" font-family="DejaVu Sans Mono, monospace" font-size="14" letter-spacing="1" fill="#ffb3bd">Not approved by anyone. Not audited by your cousin. Not a substitute for a real RNG.</text>
 <text x="1166" y="572" text-anchor="end" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="1" fill="#ffd400">sort by controversial ↓</text>
 </svg>

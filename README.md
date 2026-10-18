@@ -16,7 +16,7 @@ Warning
 * Jkurwa only verifies signature against public key and does not actually check X.509 certificate validity unless CA list is loaded.
   See dstucrypt/agent repo readme for details.
    
-![cej repo je strefa wolna wid Kaczyńskiego](https://raw.githubusercontent.com/muromec/jkurwa/master/kdpv.jpg)
+![KALYNA - the 512-bit berry: the S-box drawn as a cluster of viburnum berries](kdpv.svg)
 
 [![Build Status](https://travis-ci.org/dstucrypt/jkurwa.svg?branch=master)](https://travis-ci.org/dstucrypt/jkurwa)
 [![codecov](https://codecov.io/gh/dstucrypt/jkurwa/branch/master/graph/badge.svg)](https://codecov.io/gh/dstucrypt/jkurwa)
