@@ -27,3 +27,14 @@ API changes
   does not implement now fails verification (`ESIGN` from `box.unwrap()`)
   instead of raising an exception.  Signing still raises when no implementation
   is configured, because no signature can be produced in that case.
+
+# v1.23.2
+
+- Fix: `util.invert()` used an undeclared loop variable, which created a global
+  in the CJS build and threw `ReferenceError: i is not defined` from the ESM
+  build when loading a JKS key container (issue #74).
+- Fix: `OcspResponse.encodeSpec()` assigned an undeclared `certSpec` global.
+- Fix: `packed_xml.unobfuscate()` referenced `xorStr`, which was scoped to
+  `getVersion()`; it is now module-level.
+- Use `globalThis` instead of the Node-only `global` in `curve.js`, `Priv.js`
+  and `rand.browser.js`, so the browser build does not depend on a shim.
